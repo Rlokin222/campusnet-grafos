@@ -12,7 +12,7 @@ Markdown
 | Campo | Preenchimento |
 |-------|---------------|
 | Nome do projeto | CampusNet - Otimizador de Infraestrutura de Rede |
-| Repositório GitHub | https://github.com/Rlokin222/campusnet-grafos|
+| Repositório GitHub | https://github.com/Rlokin222/campusnet-grafos |
 | Integrante 1 | Igor Nonaka — RA 37420518 |
 | Integrante 2 | Marcus Gabriel — RA 39262901 |
 | Integrante 3 | Ronald Lopes — RA 38899817 |
