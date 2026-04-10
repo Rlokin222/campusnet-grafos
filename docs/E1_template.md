@@ -1,8 +1,8 @@
-# E1 — Proposta e Definição do Projeto
+# E1 — Proposta e Definição do Projeto (REVISADO)
 
-> **Disciplina:** Teoria dos Grafos  
-> **Prazo:** 18 de março de 2026  
-> **Peso:** 10% da nota final  
+> Disciplina: Teoria dos Grafos  
+> Prazo original: 18 de março de 2026  
+> Status: Corrigido com base no feedback da avaliação E1
 
 ---
 
@@ -10,89 +10,59 @@
 
 | Campo | Preenchimento |
 |-------|---------------|
-| Nome do projeto | |
-| Integrante 1 | Nome —Igor Nonaka RA 37420518|
-| Integrante 2 | Nome —Marcus Gabriel RA 39262901 |
-| Integrante 3 | Nome —Ronald Lopes RA 38899817|
-| Domínio de aplicação | ex.: logística, redes, jogos... |
+| Nome do projeto | CampusNet — Otimizador de Infraestrutura de Rede |
+| Integrante 1 | Igor Nonaka (RA 37420518) |
+| Integrante 2 | Marcus Gabriel (RA 39262901) |
+| Integrante 3 | Ronald Lopes (RA 38899817) |
+| Domínio de aplicação | Redes e Infraestrutura Física |
 
 ---
 
 ## 1. Contexto e Motivação
 
-> Descreva o problema do mundo real que será abordado. Por que ele é relevante?  
-> *Orientação: 2 a 3 parágrafos. Seja específico — evite generalizações.*
+O projeto proposto trata do planejamento da instalação de uma rede de internet em um campus universitário. Em um campus, existem vários pontos que precisam de conexão, como blocos, bibliotecas, laboratórios e secretarias. Fazer esse planejamento manualmente pode gerar gastos desnecessários com cabeamento, especialmente quando há múltiplas rotas possíveis entre os locais. Além disso, a menor distância nem sempre é a melhor solução, pois fatores físicos e estruturais influenciam diretamente no custo final.
 
- O projeto proposto trata do planejamento da instalação de uma rede de internet em um campus universitário. Em um campus, existem vários pontos que precisam de conexão, como blocos, biblioteca, laboratórios, secretaria, salas de aula e outros ambientes. Fazer esse planejamento manualmente pode gerar gastos desnecessários, principalmente quando há muitas possibilidades de ligação entre os pontos. Além disso, a menor distância entre dois locais nem sempre representa a melhor solução, já que fatores físicos e estruturais também influenciam no custo final da instalação.
-No cenário proposto, o usuário poderá cadastrar diferentes pontos do campus onde deseja disponibilizar internet e informar quais conexões podem existir entre eles. Para cada conexão, será possível inserir dados como distância em metros, presença de obstáculos no caminho, tipo de terreno, diferença de andares entre os locais e outras dificuldades de instalação. Assim, o sistema poderá analisar não apenas se dois pontos podem ser conectados, mas também qual é o custo aproximado dessa ligação.
-Esse problema é relevante porque representa uma aplicação real de otimização em redes, área que tem forte relação com a Teoria dos Grafos. Em vez de conectar os pontos de forma arbitrária, o sistema buscará uma solução que ligue todos os locais necessários com o menor custo total possível. Além disso, o projeto possui valor educacional, pois permite visualizar de maneira concreta como conceitos teóricos de grafos podem ser aplicados em um problema prático de infraestrutura. A proposta também pode ser expandida para um nível mais detalhado, incluindo o planejamento de roteadores dentro de salas e ambientes internos dos prédios.
+No cenário proposto, o usuário cadastra os pontos e as conexões possíveis, informando dados como distância, presença de obstáculos, tipo de terreno e diferença de andares. O sistema analisa esses múltiplos fatores para definir o custo real de cada ligação. Este problema é relevante porque impacta diretamente na redução de custos operacionais e no desperdício de materiais em obras de infraestrutura, permitindo uma expansão de rede mais eficiente e econômica.
 
-
----
+Escopo e Limitações: O foco desta etapa é a interligação externa entre os prédios e setores do campus. O planejamento detalhado de roteadores dentro das salas e ambientes internos é considerado um trabalho futuro e não faz parte da entrega atual.
 
 ## 2. Objetivo Geral
 
-> O que o sistema deve ser capaz de fazer ao final?  
-> *Orientação: 1 frase clara e objetiva. Ex.: "O sistema deve calcular a rota de menor custo entre dois pontos em um mapa urbano."*
-
- O sistema deve planejar a rede de internet de um campus universitário, conectando todos os pontos necessários com o menor custo total possível por meio da modelagem em grafos.
- 
-
----
+O sistema deve planejar a rede de internet de um campus universitário, conectando todos os pontos necessários com o menor custo total possível por meio da modelagem em grafos e algoritmos de otimização.
 
 ## 3. Objetivos Específicos
 
-> Desmembre o objetivo geral em metas mensuráveis.  
-> *Orientação: liste entre 3 e 5 itens. Cada item deve ser verificável — use verbos como "implementar", "calcular", "exibir", "carregar".*
-
-- [Implementar o cadastro de pontos do campus, como blocos, setores e salas.] 
-- [Implementar o cadastro das conexões possíveis entre os pontos, com seus respectivos custos.] 
-- [ Calcular a melhor rede de conexão usando um algoritmo de árvore geradora mínima. ] 
-- [ Exibir visualmente o grafo original e a solução otimizada encontrada. ] 
-- [ Mostrar o custo total da rede planejada a partir das conexões escolhidas. ]
-
----
+* Implementar o cadastro de pontos (vértices) e das conexões possíveis (arestas) com seus respectivos parâmetros físicos.
+* Calcular o peso de cada aresta através de uma fórmula de soma ponderada que considere distância, obstáculos e terreno.
+* Validar se o grafo de entrada é conexo, alertando o usuário caso existam pontos que não podem ser alcançados pela rede.
+* Calcular a melhor rede de conexão usando o algoritmo de Kruskal para Árvore Geradora Mínima.
+* Exibir visualmente o grafo original e a solução otimizada, informando o custo total do projeto.
 
 ## 4. Público-Alvo / Caso de Uso Principal
 
-> Para quem ou em qual cenário o sistema seria utilizado?  
-> *Orientação: descreva um cenário concreto de uso. Ex.: "Um entregador de aplicativo que precisa otimizar a sequência de entregas em um bairro."*
+O sistema é voltado para gestores de TI e estudantes que desejam simular o planejamento econômico de uma rede de campus. O usuário informa os pontos que precisam de conexão e as dificuldades físicas entre eles, e o sistema retorna a árvore de conexões que garante a conectividade total com o menor investimento financeiro.
 
-O sistema é voltado para uso acadêmico e educacional, sendo pensado principalmente para estudantes e professores que desejam visualizar uma aplicação prática da Teoria dos Grafos. O caso de uso principal é a simulação do planejamento de rede de internet em um campus universitário, em que o usuário informa os pontos que precisam de conexão e as possíveis ligações entre eles, e o sistema retorna a forma mais econômica de interligar toda a estrutura.
+## 5. Justificativa Técnica: Por que Grafos?
 
----
+A modelagem em grafos é a abordagem ideal porque o problema é, por natureza, uma rede de pontos interligados. Cada prédio ou sala é mapeado como um vértice, enquanto cada caminho viável para os cabos é uma aresta. O grafo será ponderado, onde o peso da aresta não é apenas a distância, mas uma representação do custo real calculada por uma função que pondera obstáculos e tipos de solo.
 
-## 5. Justificativa Técnica — Por que Grafos?
-
-> Por que a modelagem em grafo é a abordagem mais adequada para este problema?  
-> *Orientação: explique quais elementos do problema mapeiam naturalmente para vértices e arestas. Mencione se há pesos, direção, ou restrições que reforçam a escolha.*
-
- A modelagem em grafos é adequada porque o problema pode ser representado naturalmente como uma rede de pontos conectáveis. Cada bloco, prédio, laboratório, secretaria ou sala pode ser tratado como um vértice, enquanto cada ligação possível entre dois locais pode ser representada como uma aresta. Como cada conexão possui um custo associado, o grafo será ponderado, permitindo que o sistema leve em conta não apenas a existência de ligação entre os pontos, mas também o custo real aproximado de cada instalação.
-Além disso, o problema exige encontrar uma forma de conectar todos os pontos necessários sem desperdício de conexões e com menor custo total, o que se encaixa diretamente no conceito de árvore geradora mínima. Nesse contexto, algoritmos clássicos da Teoria dos Grafos, como Kruskal, tornam-se apropriados para resolver o problema de maneira eficiente. Dessa forma, os grafos não serão usados apenas como representação visual, mas como a base da solução computacional do sistema.
-
-
----
+Como o objetivo é conectar todos os pontos sem ciclos (redundâncias) e com o menor custo, o problema mapeia-se diretamente para o conceito de Árvore Geradora Mínima (AGM). O uso do algoritmo de Kruskal é justificado pela eficiência em lidar com grafos esparsos, típicos de infraestruturas físicas de campus.
 
 ## 6. Tipo de Grafo
 
-> Especifique as características do grafo que o problema requer.
-
-| Característica                   | Escolha             | Justificativa breve                                                                                       |
-| -------------------------------- | ------------------- | --------------------------------------------------------------------------------------------------------- |
-| Dirigido ou não-dirigido         | Não-dirigido        | A ligação entre dois pontos do campus vale nos dois sentidos.                                             |
-| Ponderado ou não-ponderado       | Ponderado           | Cada conexão terá um peso baseado em distância, obstáculos, terreno, andares e dificuldade de instalação. |
-| Conectado / bipartido / geral    | Conectado           | A proposta exige que todos os pontos da rede possam ser ligados.                                          |
-| Representação interna pretendida | Lista de adjacência | É mais adequada para grafos esparsos e facilita o armazenamento das conexões com pesos.|
----
+| Característica | Escolha | Justificativa |
+| :--- | :--- | :--- |
+| Direção | Não-dirigido | A conexão física via cabo permite tráfego nos dois sentidos. |
+| Peso | Ponderado | Cada conexão possui custos distintos baseados em distância e dificuldades físicas. |
+| Conectividade | Geral (Entrada) | O grafo inserido pelo usuário pode ser inicialmente desconexo; o sistema deve validar isso antes de gerar a AGM conectada. |
+| Representação | Lista de Adjacência | Mais eficiente para grafos esparsos (onde nem todos os prédios se conectam diretamente a todos os outros). |
 
 ## 7. Diagrama Conceitual
 
-> Insira aqui ao menos uma figura que ilustre o domínio do problema.  
-> *Pode ser uma imagem exportada do Draw.io, Excalidraw, foto de esboço à mão etc.*  
+O diagrama ilustra o campus universitário como um grafo, onde os prédios são vértices e as rotas de cabos são arestas com pesos numéricos baseados na fórmula de custo.
 
-<!-- imagem aqui -->
-
-**Legenda:** 
+![Diagrama Conceitual do Campus](./docs/diagramaConceitual1.png)
+Legenda: Exemplo de representação do campus como um grafo ponderado.
 
 ---
 
@@ -109,3 +79,5 @@ Antes de submeter, confirme:
 ---
 
 *Teoria dos Grafos — Profa. Dra. Andréa Ono Sakai*
+
+
