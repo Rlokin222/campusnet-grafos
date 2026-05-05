@@ -169,11 +169,12 @@ tests/test_kruskal.py::TestGrafoCompleto::test_grafo_desconexo_levanta_erro PASS
 
 | Hash (7 chars) | Mensagem | Autor |
 |----------------|----------|-------|
-| `a_defin` | feat: implementa leitura de arquivo JSON na camada IO | Igor / Marcus / Ronald |
-| `a_defin` | feat: implementa calculo de peso ponderado no Grafo | Igor / Marcus / Ronald |
-| `a_defin` | feat: implementa algoritmo de Kruskal e Union-Find | Igor / Marcus / Ronald |
-| `a_defin` | test: adiciona testes unitarios base, vazio e completo | Igor / Marcus / Ronald |
-| `a_defin` | feat: cria interface interativa com Streamlit | Igor / Marcus / Ronald |
+| `d968c1e` | feat: implementa nucleo do grafo — Edge, Graph, Union-Find e Kruskal O(E log E) | Igor / Marcus / Ronald |
+| `faabb49` | feat: adiciona camada de I/O (file_reader.py) e camada de servico (network_service.py) | Igor / Marcus / Ronald |
+| `0852b48` | feat: adiciona modulo de visualizacao do grafo com networkx e matplotlib (AGM destacada) | Igor / Marcus / Ronald |
+| `0b5435a` | feat: cria interface interativa com Streamlit (upload JSON, grafo visual, tabela AGM, custo total) | Igor / Marcus / Ronald |
+| `56c95d7` | test: adiciona 12 testes unitarios pytest — caso base, grafo vazio, grafo completo K4 e grafo desconexo | Igor / Marcus / Ronald |
+| `1cc95fd` | docs: adiciona E3_template, README completo, screenshots do MVP e .gitignore | Igor / Marcus / Ronald |
 
 ---
 
@@ -195,13 +196,13 @@ tests/test_kruskal.py::TestGrafoCompleto::test_grafo_desconexo_levanta_erro PASS
 
 ## Checklist de Entrega
 
-- [ ] Repositório público e acessível
+- [x] Repositório público e acessível
 - [x] .gitignore configurado
-- [ ] README com instruções de execução do MVP
+- [x] README com instruções de execução do MVP
 - [x] Algoritmo principal executando sem erros (`pytest` → 12/12 ✅)
 - [x] Tela de entrada e tela de resultado demonstráveis (screenshots em `docs/assets/`)
 - [x] 3 testes unitários por algoritmo (12 testes cobrindo caso base, vazio, completo e desconexo)
-- [ ] ≥ 5 commits com prefixos semânticos (feat:, fix:, test:, docs:)
+- [x] ≥ 5 commits com prefixos semânticos (feat:, fix:, test:, docs:) — 6 commits semânticos realizados
 - [x] Ao menos 1 arquivo de grafo de exemplo em `data/` (`campus_mock.json` com 10 nós e 15 arestas)
 
 ---
