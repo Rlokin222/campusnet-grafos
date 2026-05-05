@@ -1,0 +1,136 @@
+{
+  "vertices": [
+    "Reitoria",
+    "Bloco_A",
+    "Bloco_B",
+    "Bloco_C",
+    "Biblioteca",
+    "Laboratorio_Info",
+    "Cantina",
+    "Ginasio",
+    "Estacionamento",
+    "Almoxarifado"
+  ],
+  "arestas": [
+    {
+      "origem": "Reitoria",
+      "destino": "Bloco_A",
+      "distancia": 120.0,
+      "fator_terreno": 1.0,
+      "obstaculos": 0,
+      "andares": 1
+    },
+    {
+      "origem": "Reitoria",
+      "destino": "Biblioteca",
+      "distancia": 200.0,
+      "fator_terreno": 1.2,
+      "obstaculos": 1,
+      "andares": 0
+    },
+    {
+      "origem": "Reitoria",
+      "destino": "Cantina",
+      "distancia": 350.0,
+      "fator_terreno": 1.0,
+      "obstaculos": 2,
+      "andares": 0
+    },
+    {
+      "origem": "Bloco_A",
+      "destino": "Bloco_B",
+      "distancia": 80.0,
+      "fator_terreno": 1.0,
+      "obstaculos": 0,
+      "andares": 0
+    },
+    {
+      "origem": "Bloco_A",
+      "destino": "Laboratorio_Info",
+      "distancia": 60.0,
+      "fator_terreno": 1.0,
+      "obstaculos": 0,
+      "andares": 2
+    },
+    {
+      "origem": "Bloco_B",
+      "destino": "Bloco_C",
+      "distancia": 75.0,
+      "fator_terreno": 1.0,
+      "obstaculos": 0,
+      "andares": 0
+    },
+    {
+      "origem": "Bloco_B",
+      "destino": "Biblioteca",
+      "distancia": 150.0,
+      "fator_terreno": 1.5,
+      "obstaculos": 1,
+      "andares": 0
+    },
+    {
+      "origem": "Bloco_C",
+      "destino": "Ginasio",
+      "distancia": 250.0,
+      "fator_terreno": 1.5,
+      "obstaculos": 3,
+      "andares": 0
+    },
+    {
+      "origem": "Bloco_C",
+      "destino": "Cantina",
+      "distancia": 100.0,
+      "fator_terreno": 1.0,
+      "obstaculos": 0,
+      "andares": 0
+    },
+    {
+      "origem": "Biblioteca",
+      "destino": "Laboratorio_Info",
+      "distancia": 90.0,
+      "fator_terreno": 1.0,
+      "obstaculos": 0,
+      "andares": 1
+    },
+    {
+      "origem": "Cantina",
+      "destino": "Ginasio",
+      "distancia": 180.0,
+      "fator_terreno": 1.2,
+      "obstaculos": 1,
+      "andares": 0
+    },
+    {
+      "origem": "Cantina",
+      "destino": "Estacionamento",
+      "distancia": 220.0,
+      "fator_terreno": 1.0,
+      "obstaculos": 0,
+      "andares": 0
+    },
+    {
+      "origem": "Ginasio",
+      "destino": "Estacionamento",
+      "distancia": 300.0,
+      "fator_terreno": 1.0,
+      "obstaculos": 2,
+      "andares": 0
+    },
+    {
+      "origem": "Estacionamento",
+      "destino": "Almoxarifado",
+      "distancia": 130.0,
+      "fator_terreno": 1.0,
+      "obstaculos": 0,
+      "andares": 0
+    },
+    {
+      "origem": "Almoxarifado",
+      "destino": "Bloco_A",
+      "distancia": 400.0,
+      "fator_terreno": 1.5,
+      "obstaculos": 2,
+      "andares": 0
+    }
+  ]
+}
