@@ -12,7 +12,7 @@ st.set_page_config(
     initial_sidebar_state="expanded",
 )
 
-# CSS customizado — cores, fontes e cards
+# CSS customizado, cores, fontes e cards
 st.markdown(
     """
     <style>
@@ -128,7 +128,7 @@ with st.sidebar:
 
     st.divider()
 
-    # Como funciona — 3 passos simples
+    # Como funciona 3 passos simples
     st.markdown("**📖 Como funciona**")
     st.markdown(
         """

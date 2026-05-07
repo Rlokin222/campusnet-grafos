@@ -1,10 +1,10 @@
 # Implementação do Algoritmo de Kruskal para calcular a AGM (Árvore Geradora Mínima).
 #
 # A ideia é simples:
-#   1. Ordena todas as arestas do menor para o maior custo.
-#   2. Vai pegando aresta por aresta — se ela conectar dois componentes
-#      diferentes (sem ciclo), adiciona na AGM.
-#   3. Para quando a AGM tiver V-1 arestas (uma AGM sempre tem exatamente isso).
+# Ordena todas as arestas do menor para o maior custo.
+# Vai pegando aresta por aresta se ela conectar dois componentes
+# diferentes (sem ciclo), adiciona na AGM.
+# Para quando a AGM tiver V-1 arestas (uma AGM sempre tem exatamente isso).
 #
 # Complexidade total: O(E log E), dominada pela etapa de ordenação.
 from src.core.disjoint_set import UnionFind
@@ -17,7 +17,7 @@ def run_kruskal(graph: Graph) -> tuple[list[Edge], float]:
     Roda o Kruskal no grafo e devolve as arestas da AGM com o custo total.
 
     Se o grafo estiver vazio, devolve uma lista vazia e custo zero.
-    Se o grafo for desconexo, lança um ValueError — não tem AGM possível.
+    Se o grafo for desconexo, lança um ValueError, pois não tem AGM possível.
     """
     if graph.num_vertices == 0:
         return [], 0.0
