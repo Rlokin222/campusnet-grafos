@@ -40,7 +40,7 @@ pip install -r requirements.txt
 **Execução:**
 ```bash
 # Comando para rodar a interface web do MVP
-streamlit run src/app.py
+python -m streamlit run src/app.py
 ```
 
 **Saída esperada:**
