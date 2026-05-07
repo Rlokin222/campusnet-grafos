@@ -1,4 +1,4 @@
-# 🌐 CampusNet — Otimizador de Infraestrutura de Rede
+# CampusNet — Otimizador de Infraestrutura de Rede
 
 > **Disciplina:** Teoria dos Grafos — Profa. Dra. Andréa Ono Sakai  
 > **Equipe:** Igor Nonaka · Marcus Gabriel · Ronald Lopes
@@ -7,7 +7,7 @@ Sistema que calcula a **Árvore Geradora Mínima (AGM)** para o planejamento de 
 
 ---
 
-## 📐 Fórmula de Custo
+## Fórmula de Custo
 
 O peso de cada aresta não é informado diretamente — ele é calculado internamente pela regra de negócio:
 
@@ -24,7 +24,7 @@ Custo = (distância × fator_terreno) + (obstáculos × 50) + (diferença_andare
 
 ---
 
-## 🗂️ Estrutura do Projeto
+## Estrutura do Projeto
 
 ```
 campusnet-grafos/
@@ -56,14 +56,14 @@ campusnet-grafos/
 
 ---
 
-## ⚙️ Pré-requisitos
+## Pré-requisitos
 
 - **Python 3.10+**  
 - pip
 
 ---
 
-## 🚀 Instalação e Execução
+## Instalação e Execução
 
 ### 1. Clone o repositório
 
@@ -98,9 +98,9 @@ O navegador abrirá automaticamente em **http://localhost:8501**.
 
 ---
 
-## 🖥️ Como usar
+## Como usar
 
-1. Na barra lateral, clique em **"📂 Carregar topologia (JSON)"**
+1. Na barra lateral, clique em **"Carregar topologia (JSON)"**
 2. Faça o upload do arquivo `data/campus_mock.json` (ou do seu próprio arquivo)
 3. O sistema irá:
    - Validar a conectividade do grafo via BFS
@@ -110,7 +110,7 @@ O navegador abrirá automaticamente em **http://localhost:8501**.
 
 ---
 
-## 📄 Formato do Arquivo JSON de Entrada
+## Formato do Arquivo JSON de Entrada
 
 ```json
 {
@@ -130,7 +130,7 @@ O navegador abrirá automaticamente em **http://localhost:8501**.
 
 ---
 
-## 🧪 Testes
+## Testes
 
 ```bash
 pytest tests/ -v
@@ -140,7 +140,7 @@ pytest tests/ -v
 
 ---
 
-## 📊 Complexidade do Algoritmo
+## Complexidade do Algoritmo
 
 | Etapa | Complexidade |
 |---|---|
@@ -149,4 +149,4 @@ pytest tests/ -v
 | **Total** | **O(E log E)** |
 | Espaço (Union-Find) | O(V) |
 
-onde α é a função inversa de Ackermann — praticamente constante para qualquer entrada real.
+onde α é a função inversa de Ackermann, praticamente constante para qualquer entrada real.
