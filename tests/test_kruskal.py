@@ -1,6 +1,6 @@
 """
-Testes unitários do Algoritmo de Kruskal – CampusNet.
-Execute com:  pytest tests/test_kruskal.py -v
+testes unitários do Algoritmo de Kruskal – CampusNet.
+execute com:  pytest tests/test_kruskal.py -v
 """
 import pytest
 
@@ -59,7 +59,7 @@ def _make_complete_graph() -> Graph:
 # ---------------------------------------------------------------------------
 
 class TestCasoBase:
-    """Grafo simples com 3 vértices e 3 arestas."""
+    """grafo simples com 3 vértices e 3 arestas."""
 
     def test_custo_total_correto(self):
         """A AGM do triângulo A-B-C deve custar exatamente 250."""
@@ -83,7 +83,7 @@ class TestCasoBase:
         )
 
     def test_formula_peso_aplicada(self):
-        """Verifica que a fórmula com obstáculos e andares é aplicada corretamente."""
+        """verifica que a fórmula com obstáculos e andares é aplicada corretamente."""
         g = Graph()
         # Custo = (50 * 2.0) + (3 * 50) + (2 * 100) = 100 + 150 + 200 = 450
         edge = g.add_edge(
@@ -101,7 +101,7 @@ class TestCasoBase:
 # ---------------------------------------------------------------------------
 
 class TestGrafoVazio:
-    """Comportamento com grafo sem vértices."""
+    """comportamento com grafo sem vértices."""
 
     def test_retorna_lista_vazia(self):
         """Kruskal em grafo vazio deve retornar lista de arestas vazia."""
@@ -116,7 +116,7 @@ class TestGrafoVazio:
         assert total == 0.0
 
     def test_conectividade_grafo_vazio(self):
-        """Um grafo vazio deve ser considerado conexo (vacuamente verdadeiro)."""
+        """um grafo vazio deve ser considerado conexo (vacuamente verdadeiro)."""
         g = Graph()
         connected, isolated = g.check_connectivity()
         assert connected is True
