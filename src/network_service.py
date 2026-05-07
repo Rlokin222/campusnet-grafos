@@ -1,14 +1,5 @@
-"""
-Camada de Serviço (Application Layer) — CampusNet.
-
-Responsabilidade: orquestrar as operações entre a UI e o Domínio.
-  1. Recebe os bytes brutos do arquivo JSON (vindos do upload)
-  2. Delega a leitura para a camada de I/O
-  3. Constrói o grafo via camada de Domínio
-  4. Valida a conectividade
-  5. Executa o Kruskal se o grafo for conexo
-  6. Devolve um objeto de resultado estruturado para a UI
-"""
+# Aqui a gente chama tudo em ordem: lê o arquivo, monta o grafo,
+# verifica se é conexo e roda o Kruskal. O resultado vai para a interface.
 import time
 from dataclasses import dataclass, field
 
@@ -20,7 +11,10 @@ from src.io.file_reader import load_json_from_bytes
 
 @dataclass
 class ProcessingResult:
-    """DTO com todos os dados necessários para a camada de Apresentação."""
+    """
+    Agrupa tudo que a interface precisa mostrar depois do processamento:
+    o grafo, as arestas da AGM, o custo total e os tempos de execução.
+    """
 
     graph: Graph
     is_connected: bool
@@ -32,32 +26,30 @@ class ProcessingResult:
 
     @property
     def total_time_ms(self) -> float:
+        """Tempo total = leitura + Kruskal."""
         return self.build_time_ms + self.kruskal_time_ms
 
 
 def process_campus_network(raw_bytes: bytes) -> ProcessingResult:
     """
-    Ponto de entrada único da camada de serviço.
+    Função principal que a interface chama quando o usuário faz o upload.
 
-    Args:
-        raw_bytes: Conteúdo binário do arquivo JSON enviado pelo usuário.
-
-    Returns:
-        ProcessingResult com o grafo, o resultado da AGM e métricas de tempo.
-
-    Raises:
-        ValueError: Se o JSON for inválido ou o schema estiver incorreto.
+    Passos:
+        1. Lê o JSON e monta o grafo
+        2. Verifica se o grafo é conexo (BFS)
+        3. Se conexo, roda o Kruskal e calcula a AGM
+        4. Devolve tudo organizado no ProcessingResult
     """
-    # — Etapa 1: Leitura e construção do grafo —
+    # Etapa 1: lê o arquivo e constrói o grafo (medindo o tempo)
     t0 = time.perf_counter()
     data = load_json_from_bytes(raw_bytes)
     graph = Graph.from_dict(data)
     build_time_ms = (time.perf_counter() - t0) * 1000
 
-    # — Etapa 2: Validação de conectividade —
+    # Etapa 2: verifica se todos os prédios estão conectados
     is_connected, isolated = graph.check_connectivity()
 
-    # — Etapa 3: Execução do Kruskal (apenas se conexo) —
+    # Etapa 3: só roda o Kruskal se o grafo for conexo
     mst_edges: list[Edge] = []
     total_cost = 0.0
     kruskal_time_ms = 0.0

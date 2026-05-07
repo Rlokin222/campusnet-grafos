@@ -1,7 +1,5 @@
-"""
-Módulo que define a classe Graph (grafo não-dirigido e ponderado).
-Usa Lista de Adjacência como estrutura interna.
-"""
+# Classe principal do grafo — aqui ficam os vértices, arestas e a lógica
+# de calcular o custo de cada ligação entre os prédios do campus.
 from collections import defaultdict, deque
 from typing import Any
 
@@ -12,30 +10,29 @@ class Graph:
     """
     Grafo não-dirigido e ponderado representado por Lista de Adjacência.
 
-    A classe encapsula a fórmula de negócio do CampusNet:
-        Custo = (distancia * fator_terreno) + (obstaculos * 50) + (andares * 100)
+    Aqui a gente guarda os prédios do campus como vértices e as possíveis
+    conexões de cabo como arestas. O custo de cada aresta é calculado
+    automaticamente pela fórmula do projeto:
+
+        Custo = (distancia × fator_terreno) + (obstaculos × 50) + (andares × 100)
     """
 
     def __init__(self) -> None:
-        # Conjunto de vértices (preserva ordem de inserção em Python 3.7+)
+        # Conjunto com os nomes de todos os prédios (vértices)
         self._vertices: set[str] = set()
-        # Lista de adjacência: vértice → lista de arestas
+        # Lista de adjacência: para cada prédio, quais outros ele alcança
         self._adj: dict[str, list[Edge]] = defaultdict(list)
-        # Lista global de todas as arestas (sem duplicatas direcionais)
+        # Lista com todas as arestas (sem duplicatas — só uma direção cada)
         self._edges: list[Edge] = []
-
-    # ------------------------------------------------------------------
-    # Propriedades
-    # ------------------------------------------------------------------
 
     @property
     def vertices(self) -> list[str]:
-        """Retorna a lista ordenada de vértices."""
+        """Devolve a lista de vértices em ordem alfabética."""
         return sorted(self._vertices)
 
     @property
     def edges(self) -> list[Edge]:
-        """Retorna todas as arestas do grafo."""
+        """Devolve todas as arestas do grafo."""
         return list(self._edges)
 
     @property
@@ -46,12 +43,8 @@ class Graph:
     def num_edges(self) -> int:
         return len(self._edges)
 
-    # ------------------------------------------------------------------
-    # Mutação
-    # ------------------------------------------------------------------
-
     def add_vertex(self, label: str) -> None:
-        """Adiciona um vértice isolado ao grafo."""
+        """Adiciona um prédio (vértice) sem nenhuma conexão ainda."""
         self._vertices.add(label)
 
     def add_edge(
@@ -64,59 +57,48 @@ class Graph:
         andares: int,
     ) -> Edge:
         """
-        Calcula o peso via fórmula de negócio e insere a aresta (não-dirigida).
+        Calcula o custo da ligação e adiciona a aresta no grafo.
 
-        Fórmula:
-            Custo = (distancia * fator_terreno) + (obstaculos * 50) + (andares * 100)
-
-        Args:
-            origem:        Vértice de origem.
-            destino:       Vértice de destino.
-            distancia:     Distância física em metros.
-            fator_terreno: Multiplicador do terreno (1.0 = plano, 1.5 = difícil).
-            obstaculos:    Número de obstáculos (paredes, dutos, etc.).
-            andares:       Diferença de andares entre os pontos.
-
-        Returns:
-            A instância de Edge criada.
+        A fórmula considera distância, dificuldade do terreno, obstáculos
+        físicos (paredes, dutos) e diferença de andares entre os prédios.
         """
+        # Fórmula de custo definida no projeto
         peso = (distancia * fator_terreno) + (obstaculos * 50) + (andares * 100)
         edge = Edge(peso=round(peso, 4), origem=origem, destino=destino)
 
-        # Registra os vértices automaticamente
+        # Registra os dois prédios como vértices (caso ainda não existam)
         self._vertices.add(origem)
         self._vertices.add(destino)
 
-        # Lista de adjacência (grafo não-dirigido → inserção em ambas as direções)
+        # Grafo não-dirigido: a aresta aparece nos dois lados da adjacência
         self._adj[origem].append(edge)
         self._adj[destino].append(Edge(peso=edge.peso, origem=destino, destino=origem))
 
-        # Mantém apenas uma cópia na lista global de arestas
+        # Mas na lista global guardamos só uma vez (sem duplicata)
         self._edges.append(edge)
 
         return edge
 
-    # ------------------------------------------------------------------
-    # Conectividade
-    # ------------------------------------------------------------------
-
     def check_connectivity(self) -> tuple[bool, list[str]]:
         """
-        Verifica se o grafo é conexo usando BFS a partir do primeiro vértice.
+        Verifica se dá para chegar em todos os prédios a partir de qualquer um.
 
-        Returns:
-            (True, [])           → Grafo conexo.
-            (False, [v1, v2, …]) → Grafo desconexo; lista contém os vértices
-                                   não alcançáveis a partir da origem.
+        Usamos BFS: começamos de um vértice e tentamos visitar todos os outros.
+        Se sobrar algum não visitado, o grafo é desconexo e não tem AGM.
+
+        Retorna:
+            (True, [])           → todos conectados, pode rodar o Kruskal.
+            (False, [v1, v2, …]) → lista com os prédios isolados.
         """
         if not self._vertices:
             return True, []
 
         visited: set[str] = set()
-        start = next(iter(sorted(self._vertices)))
+        start = next(iter(sorted(self._vertices)))  # começa do primeiro em ordem alfabética
         queue: deque[str] = deque([start])
         visited.add(start)
 
+        # BFS clássica
         while queue:
             current = queue.popleft()
             for edge in self._adj[current]:
@@ -124,24 +106,18 @@ class Graph:
                     visited.add(edge.destino)
                     queue.append(edge.destino)
 
+        # Prédios que não foram alcançados pela BFS
         isolated = sorted(self._vertices - visited)
         is_connected = len(isolated) == 0
         return is_connected, isolated
 
-    # ------------------------------------------------------------------
-    # Factory
-    # ------------------------------------------------------------------
-
     @classmethod
     def from_dict(cls, data: dict[str, Any]) -> "Graph":
         """
-        Constrói um grafo a partir do dicionário retornado pelo file_reader.
+        Monta o grafo a partir do dicionário lido do arquivo JSON.
 
-        Args:
-            data: Dicionário com 'vertices' (list[str]) e 'arestas' (list[dict]).
-
-        Returns:
-            Instância de Graph populada.
+        O dicionário precisa ter as chaves 'vertices' e 'arestas',
+        que é o formato que o file_reader já entrega validado.
         """
         graph = cls()
 

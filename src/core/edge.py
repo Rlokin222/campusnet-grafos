@@ -1,25 +1,25 @@
-"""
-Módulo que define a estrutura de uma aresta do grafo.
-"""
+# Representa uma aresta do grafo — tem origem, destino e peso (custo).
 from dataclasses import dataclass
 
 
 @dataclass(frozen=True, order=True)
 class Edge:
     """
-    Representa uma aresta não-dirigida e ponderada do grafo.
+    Aresta do grafo do campus.
 
-    Attributes:
-        peso:   Custo calculado pela fórmula de negócio (usado na ordenação).
-        origem: Identificador do vértice de origem.
-        destino: Identificador do vértice de destino.
+    O campo 'peso' vem primeiro porque o Python usa a ordem dos campos
+    para comparar dataclasses. O Kruskal precisa ordenar as arestas
+    do menor para o maior custo, então isso facilita muito.
+
+    Atributos:
+        peso:    Custo calculado pela fórmula do projeto.
+        origem:  Nome do prédio de onde sai o cabo.
+        destino: Nome do prédio onde o cabo chega.
     """
 
-    # 'peso' é o primeiro campo para que a ordenação natural (order=True)
-    # compare arestas pelo custo, como exige o Kruskal.
     peso: float
     origem: str
     destino: str
 
     def __str__(self) -> str:
-        return f"{self.origem} <-> {self.destino}  (peso: {self.peso:.2f})"
+        return f"{self.origem} <-> {self.destino}  (custo: R$ {self.peso:.2f})"

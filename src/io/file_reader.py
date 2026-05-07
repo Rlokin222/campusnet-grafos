@@ -1,6 +1,4 @@
-"""
-Módulo responsável pela leitura de arquivos de entrada do CampusNet.
-"""
+# Lê o arquivo JSON com os dados do campus e valida se tem o formato certo.
 import json
 from pathlib import Path
 from typing import Any
@@ -8,17 +6,10 @@ from typing import Any
 
 def load_json(source: str | Path) -> dict[str, Any]:
     """
-    Lê um arquivo JSON do sistema de arquivos e retorna os dados brutos.
+    Lê um arquivo JSON do disco e devolve os dados.
 
-    Args:
-        source: Caminho (str ou Path) para o arquivo .json.
-
-    Returns:
-        Dicionário com as chaves 'vertices' e 'arestas'.
-
-    Raises:
-        FileNotFoundError: Se o arquivo não existir.
-        ValueError: Se o JSON não contiver as chaves esperadas.
+    Espera um arquivo com as chaves 'vertices' e 'arestas'.
+    Se não encontrar o arquivo ou as chaves, lança um erro.
     """
     path = Path(source)
     if not path.exists():
@@ -33,16 +24,9 @@ def load_json(source: str | Path) -> dict[str, Any]:
 
 def load_json_from_bytes(raw_bytes: bytes) -> dict[str, Any]:
     """
-    Lê um JSON a partir de bytes (útil para uploads via Streamlit).
-
-    Args:
-        raw_bytes: Conteúdo binário do arquivo .json.
-
-    Returns:
-        Dicionário com as chaves 'vertices' e 'arestas'.
-
-    Raises:
-        ValueError: Se o JSON não contiver as chaves esperadas.
+    Mesma coisa que load_json, mas recebe o conteúdo em bytes.
+    Isso é necessário porque o Streamlit entrega o arquivo assim
+    quando o usuário faz o upload.
     """
     data: dict[str, Any] = json.loads(raw_bytes.decode("utf-8"))
     _validate_schema(data)
@@ -50,7 +34,7 @@ def load_json_from_bytes(raw_bytes: bytes) -> dict[str, Any]:
 
 
 def _validate_schema(data: dict[str, Any]) -> None:
-    """Valida se as chaves obrigatórias estão presentes."""
+    """Verifica se o JSON tem as duas chaves que o programa precisa."""
     required_keys = {"vertices", "arestas"}
     missing = required_keys - data.keys()
     if missing:
