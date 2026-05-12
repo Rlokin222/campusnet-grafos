@@ -1,0 +1,136 @@
+{
+  "vertices": [
+    "Portaria",
+    "Administracao",
+    "Bloco_D",
+    "Bloco_E",
+    "Centro_Pesquisa",
+    "Auditorio",
+    "Restaurante_Universitario",
+    "Quadra_Esportiva",
+    "Residencia_Estudantil",
+    "Centro_Medico"
+  ],
+  "arestas": [
+    {
+      "origem": "Portaria",
+      "destino": "Administracao",
+      "distancia": 90.0,
+      "fator_terreno": 1.0,
+      "obstaculos": 0,
+      "andares": 1
+    },
+    {
+      "origem": "Portaria",
+      "destino": "Restaurante_Universitario",
+      "distancia": 280.0,
+      "fator_terreno": 1.3,
+      "obstaculos": 2,
+      "andares": 0
+    },
+    {
+      "origem": "Administracao",
+      "destino": "Bloco_D",
+      "distancia": 140.0,
+      "fator_terreno": 1.1,
+      "obstaculos": 1,
+      "andares": 0
+    },
+    {
+      "origem": "Administracao",
+      "destino": "Auditorio",
+      "distancia": 110.0,
+      "fator_terreno": 1.0,
+      "obstaculos": 0,
+      "andares": 1
+    },
+    {
+      "origem": "Bloco_D",
+      "destino": "Bloco_E",
+      "distancia": 95.0,
+      "fator_terreno": 1.0,
+      "obstaculos": 0,
+      "andares": 0
+    },
+    {
+      "origem": "Bloco_D",
+      "destino": "Centro_Pesquisa",
+      "distancia": 170.0,
+      "fator_terreno": 1.4,
+      "obstaculos": 2,
+      "andares": 2
+    },
+    {
+      "origem": "Bloco_E",
+      "destino": "Quadra_Esportiva",
+      "distancia": 210.0,
+      "fator_terreno": 1.2,
+      "obstaculos": 1,
+      "andares": 0
+    },
+    {
+      "origem": "Bloco_E",
+      "destino": "Centro_Medico",
+      "distancia": 160.0,
+      "fator_terreno": 1.0,
+      "obstaculos": 0,
+      "andares": 1
+    },
+    {
+      "origem": "Centro_Pesquisa",
+      "destino": "Auditorio",
+      "distancia": 130.0,
+      "fator_terreno": 1.3,
+      "obstaculos": 1,
+      "andares": 0
+    },
+    {
+      "origem": "Centro_Pesquisa",
+      "destino": "Residencia_Estudantil",
+      "distancia": 260.0,
+      "fator_terreno": 1.5,
+      "obstaculos": 3,
+      "andares": 0
+    },
+    {
+      "origem": "Auditorio",
+      "destino": "Restaurante_Universitario",
+      "distancia": 150.0,
+      "fator_terreno": 1.1,
+      "obstaculos": 1,
+      "andares": 0
+    },
+    {
+      "origem": "Restaurante_Universitario",
+      "destino": "Quadra_Esportiva",
+      "distancia": 190.0,
+      "fator_terreno": 1.0,
+      "obstaculos": 0,
+      "andares": 0
+    },
+    {
+      "origem": "Quadra_Esportiva",
+      "destino": "Residencia_Estudantil",
+      "distancia": 120.0,
+      "fator_terreno": 1.2,
+      "obstaculos": 1,
+      "andares": 0
+    },
+    {
+      "origem": "Residencia_Estudantil",
+      "destino": "Centro_Medico",
+      "distancia": 180.0,
+      "fator_terreno": 1.1,
+      "obstaculos": 0,
+      "andares": 0
+    },
+    {
+      "origem": "Centro_Medico",
+      "destino": "Administracao",
+      "distancia": 240.0,
+      "fator_terreno": 1.4,
+      "obstaculos": 2,
+      "andares": 1
+    }
+  ]
+}
