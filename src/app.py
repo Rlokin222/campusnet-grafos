@@ -3,7 +3,7 @@ import math
 import pandas as pd
 import streamlit as st
 from io import BytesIO
-from PIL import Image
+from PIL import Image, ImageDraw
 
 try:
     from streamlit_image_coordinates import streamlit_image_coordinates
@@ -167,18 +167,34 @@ elif modo == "Construtor Interativo":
     img_file = st.file_uploader("1. Faça Upload de um Mapa/Planta (PNG, JPG)", type=["png", "jpg", "jpeg"])
     
     if img_file:
-        img = Image.open(img_file)
+        original_img = Image.open(img_file).convert("RGBA")
+        
+        # --- Desenha os pontos salvos e o clique atual na imagem ---
+        overlay = Image.new("RGBA", original_img.size, (255, 255, 255, 0))
+        draw = ImageDraw.Draw(overlay)
+        r = 12 # Raio da bola
+        
+        # Bolas azuis transparentes para os pontos já salvos
+        for node_data in st.session_state.builder_nodes.values():
+            px, py = node_data["x"], node_data["y"]
+            draw.ellipse([px-r, py-r, px+r, py+r], fill=(41, 98, 255, 180))
+            
+        # Pega a última coordenada clicada do session_state (se houver) para desenhar o "pendente"
+        # O componente image_coordinates cuida de atualizar esse valor.
+        
+        # Mescla a camada de desenho com a imagem original
+        img_to_render = Image.alpha_composite(original_img, overlay)
         
         col1, col2 = st.columns([2, 1])
         with col1:
             st.markdown("**2. Clique na imagem para marcar a posição de um prédio:**")
-            value = streamlit_image_coordinates(img, key="map_click")
+            value = streamlit_image_coordinates(img_to_render, key="map_click")
             
         with col2:
             st.markdown("**Adicionar Ponto**")
             if value is not None:
                 x, y = value["x"], value["y"]
-                st.write(f"Coordenadas selecionadas: X:{x}, Y:{y}")
+                st.write(f"📍 Coordenada selecionada: **X: {x}, Y: {y}**")
                 node_name = st.text_input("Nome do Prédio/Local:")
                 if st.button("Salvar Ponto", type="primary"):
                     if node_name:
@@ -196,7 +212,16 @@ elif modo == "Construtor Interativo":
                     {"Nome": k, "X": v["x"], "Y": v["y"]} 
                     for k, v in st.session_state.builder_nodes.items()
                 ])
-                st.dataframe(df_nodes, hide_index=True)
+                # Tabela editável para os nós
+                edited_nodes = st.data_editor(df_nodes, hide_index=True, num_rows="dynamic", use_container_width=True)
+                
+                # Sincronizar edições da tabela com o state
+                new_nodes = {}
+                for _, row in edited_nodes.iterrows():
+                    if pd.notna(row["Nome"]):
+                        new_nodes[str(row["Nome"])] = {"x": int(row["X"]), "y": int(row["Y"])}
+                st.session_state.builder_nodes = new_nodes
+
                 if st.button("Limpar Pontos"):
                     st.session_state.builder_nodes = {}
                     st.session_state.builder_edges = pd.DataFrame(columns=[
@@ -205,6 +230,21 @@ elif modo == "Construtor Interativo":
                     st.rerun()
             else:
                 st.caption("Nenhum ponto cadastrado ainda.")
+            
+            st.markdown(
+                """
+                <div style="background-color: rgba(41, 98, 255, 0.1); padding: 10px; border-radius: 5px; margin-top: 15px; border-left: 3px solid #2962ff;">
+                    <strong style="color: #2962ff; font-size: 0.85rem;">Como funcionam os valores de X e Y?</strong><br>
+                    <span style="font-size: 0.8rem; color: #a0aec0;">
+                    <b>X</b> (horizontal) e <b>Y</b> (vertical) são as coordenadas em <b>pixels</b> da imagem. O canto superior esquerdo é o marco 0,0.<br>
+                    Eles servem para duas coisas:<br>
+                    1. Posicionar o prédio perfeitamente em cima do mapa visual.<br>
+                    2. Servir como base de escala para calcular a distância física entre um prédio e outro nas Conexões Automáticas.<br><br>
+                    Você pode defini-los <b>clicando na imagem</b> ou <b>editando manualmente os números na tabela acima</b>.
+                    </span>
+                </div>
+                """, unsafe_allow_html=True
+            )
 
         st.markdown('<div class="section-title">3. Tabela de Conexões e Custos Base</div>', unsafe_allow_html=True)
         st.write("Defina as conexões entre os pontos. Edite diretamente na tabela abaixo. O custo monetário será gerado na análise!")
