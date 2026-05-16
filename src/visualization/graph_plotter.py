@@ -1,25 +1,28 @@
 # Módulo de visualização — desenha o grafo do campus com matplotlib e networkx.
-# Mostra todas as arestas (com peso), destacando em azul as que fazem parte da AGM.
+# Suporta plotagem lúdica padrão ou sobreposição sobre mapas do mundo real.
+import matplotlib.image as mpimg
 import matplotlib.patches as mpatches
 import matplotlib.pyplot as plt
 import networkx as nx
+from pathlib import Path
 
 from src.core.edge import Edge
 from src.core.graph import Graph
 
-# Paleta de cores da interface
-_BG_COLOR = "#0e1117"
-_NODE_COLOR = "#7b2ff7"
-_NODE_BORDER = "#00d4ff"
-_MST_EDGE_COLOR = "#00d4ff"
-_NON_MST_EDGE_COLOR = "#3d4a5c"
-_LABEL_COLOR = "white"
-_MST_LABEL_COLOR = "#00d4ff"
-_NON_MST_LABEL_COLOR = "#5a6a7e"
+# Paleta Corporativa (Enterprise)
+_BG_COLOR = "#1e222d" # Dark slate
+_NODE_COLOR = "#2962ff" # Professional Blue
+_NODE_BORDER = "#ffffff"
+_MST_EDGE_COLOR = "#2962ff"
+_NON_MST_EDGE_COLOR = "#434651"
+_LABEL_COLOR = "#ffffff"
+_MST_LABEL_COLOR = "#ffffff"
+_MST_LABEL_BG = "#1e222d"
+_NON_MST_LABEL_COLOR = "#8a8d93"
 
 
 def _build_nx_graph(graph: Graph) -> nx.Graph:
-    """Converte nosso Graph para um grafo do networkx (necessário para o desenho)."""
+    """Converte nosso Graph para um grafo do networkx."""
     G: nx.Graph = nx.Graph()
     G.add_nodes_from(graph.vertices)
     for edge in graph.edges:
@@ -30,19 +33,17 @@ def _build_nx_graph(graph: Graph) -> nx.Graph:
 def plot_campus_graph(
     graph: Graph,
     mst_edges: list[Edge],
-    figsize: tuple[int, int] = (15, 9),
+    figsize: tuple[int, int] = (16, 9),
     seed: int = 42,
+    bg_map_type: str = "Nenhum"
 ) -> plt.Figure:
     """
     Gera a figura com o grafo completo do campus.
 
-    - Arestas da AGM: azul ciano, mais grossas, com o peso em destaque.
-    - Arestas descartadas: cinza tracejado, finas, com peso menor e apagado.
-    - Vértices: roxo com borda azul ciano e rótulo branco.
+    - bg_map_type: "Blueprint", "Satélite" ou "Nenhum".
     """
     G = _build_nx_graph(graph)
 
-    # Separa as arestas da AGM das que foram descartadas
     mst_set: set[frozenset[str]] = {
         frozenset([e.origem, e.destino]) for e in mst_edges
     }
@@ -53,24 +54,49 @@ def plot_campus_graph(
         if frozenset([u, v]) not in mst_set
     ]
 
-    # Layout spring — organiza os nós de forma que fique legível
-    pos = nx.spring_layout(G, seed=seed, k=2.8)
+    # Decide layout
+    coords = graph.coords
+    use_map = False
+    img = None
+    
+    # Se houver mapa selecionado e imagem existir
+    if bg_map_type in ["Blueprint", "Satélite"]:
+        filename = "campus_blueprint.png" if bg_map_type == "Blueprint" else "campus_satellite.png"
+        img_path = Path("data/assets") / filename
+        if img_path.exists():
+            img = mpimg.imread(str(img_path))
+            use_map = True
+
+    if use_map and coords and len(coords) == graph.num_vertices:
+        # Usa coordenadas reais do JSON
+        pos = coords
+    else:
+        # Fallback para layout padrão
+        pos = nx.spring_layout(G, seed=seed, k=2.8)
+        use_map = False
 
     fig, ax = plt.subplots(figsize=figsize, facecolor=_BG_COLOR)
     ax.set_facecolor(_BG_COLOR)
 
-    # Primeiro desenha as arestas descartadas (embaixo, para não cobrir as da AGM)
+    if use_map and img is not None:
+        # Desenha a imagem de fundo. extent=[esquerda, direita, base, topo]
+        # Imagens têm Y invertido (0 é o topo). Nossa coordenada também (y=1000 é base).
+        ax.imshow(img, extent=[0, 1920, 1080, 0])
+        ax.set_xlim(0, 1920)
+        ax.set_ylim(1080, 0) # Eixo Y invertido para casar com a matriz da imagem
+
+    # Arestas descartadas
     nx.draw_networkx_edges(
         G, pos,
         edgelist=non_mst_edge_list,
         edge_color=_NON_MST_EDGE_COLOR,
         width=1.0,
-        alpha=0.5,
+        alpha=0.6,
         style="dashed",
         ax=ax,
     )
 
-    # Depois as arestas da AGM (em cima, bem visíveis)
+    # Arestas da AGM
     nx.draw_networkx_edges(
         G, pos,
         edgelist=mst_edge_list,
@@ -80,81 +106,68 @@ def plot_campus_graph(
         ax=ax,
     )
 
-    # Nós com borda azul para dar efeito de glow
+    # Nós
     nx.draw_networkx_nodes(
         G, pos,
         node_color=_NODE_COLOR,
-        node_size=1100,
+        node_size=1000,
+        edgecolors=_NODE_BORDER,
+        linewidths=1.5,
         alpha=0.95,
         ax=ax,
     )
-    nx.draw_networkx_nodes(
-        G, pos,
-        node_color="none",
-        node_size=1200,
-        edgecolors=_NODE_BORDER,
-        linewidths=2.0,
-        ax=ax,
-    )
 
-    # Rótulos dos nós (nome do prédio)
+    # Rótulos dos nós
     nx.draw_networkx_labels(
         G, pos,
         font_color=_LABEL_COLOR,
-        font_size=7,
+        font_size=8,
         font_weight="bold",
+        bbox=dict(boxstyle="round,pad=0.2", facecolor=_NODE_COLOR, alpha=0.9, edgecolor="none"),
         ax=ax,
     )
 
-    # Pesos das arestas da AGM (em destaque, azul ciano)
-    mst_weights = {(e.origem, e.destino): f"R${e.peso:,.0f}" for e in mst_edges}
+    # Pesos das arestas da AGM
+    mst_weights = {(e.origem, e.destino): f"R$ {e.peso:,.0f}" for e in mst_edges}
     nx.draw_networkx_edge_labels(
         G, pos,
         edge_labels=mst_weights,
         font_color=_MST_LABEL_COLOR,
-        font_size=7.5,
+        font_size=8,
         font_weight="bold",
-        bbox=dict(boxstyle="round,pad=0.25", facecolor="#0d1b2a", alpha=0.85, edgecolor=_MST_EDGE_COLOR),
+        bbox=dict(boxstyle="round,pad=0.3", facecolor=_MST_LABEL_BG, alpha=0.9, edgecolor=_MST_EDGE_COLOR),
         ax=ax,
     )
 
-    # Pesos das arestas descartadas (menores e apagados)
+    # Pesos das arestas descartadas
     non_mst_weights = {
-        (u, v): f"R${G[u][v]['weight']:,.0f}"
+        (u, v): f"R$ {G[u][v]['weight']:,.0f}"
         for u, v in non_mst_edge_list
     }
     nx.draw_networkx_edge_labels(
         G, pos,
         edge_labels=non_mst_weights,
         font_color=_NON_MST_LABEL_COLOR,
-        font_size=6,
-        bbox=dict(boxstyle="round,pad=0.2", facecolor=_BG_COLOR, alpha=0.6, edgecolor="none"),
+        font_size=7,
+        bbox=dict(boxstyle="round,pad=0.2", facecolor=_BG_COLOR, alpha=0.7, edgecolor="none"),
         ax=ax,
     )
 
-    # Legenda
     legend_handles = [
-        mpatches.Patch(color=_MST_EDGE_COLOR, label=f"AGM — {len(mst_edges)} cabos selecionados"),
-        mpatches.Patch(color=_NON_MST_EDGE_COLOR, label=f"Descartadas — {len(non_mst_edge_list)} conexões"),
-        mpatches.Patch(color=_NODE_COLOR, label=f"{graph.num_vertices} prédios (vértices)"),
+        mpatches.Patch(color=_MST_EDGE_COLOR, label=f"Cabos Primários (AGM) - {len(mst_edges)} conexões"),
+        mpatches.Patch(color=_NON_MST_EDGE_COLOR, label=f"Rotas Alternativas - {len(non_mst_edge_list)} conexões"),
     ]
     ax.legend(
         handles=legend_handles,
-        loc="upper left",
-        facecolor="#1a1a2e",
-        edgecolor="#2d3748",
+        loc="upper right",
+        facecolor=_BG_COLOR,
+        edgecolor=_NON_MST_EDGE_COLOR,
         labelcolor=_LABEL_COLOR,
-        fontsize=9,
+        fontsize=10,
     )
 
-    ax.set_title(
-        "Grafo do Campus — Arestas da AGM em azul ciano",
-        color="white",
-        fontsize=13,
-        pad=18,
-        fontweight="bold",
-    )
+    # Remove título interno para deixar mais "dashboard", remove eixos
     ax.axis("off")
-    fig.tight_layout()
+    fig.tight_layout(pad=0)
 
     return fig

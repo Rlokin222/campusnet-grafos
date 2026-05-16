@@ -127,9 +127,9 @@ Em vez de `main.py` genérico, utilizamos `app.py` na raiz do `src/` por ser o p
 
 | Algoritmo | Caso de teste | Status | Comando para executar |
 |-----------|--------------|--------|----------------------|
-| Kruskal | Caso base | ✅ | `pytest tests/test_kruskal.py::test_caso_base` |
-| Kruskal | Grafo vazio | ✅ | `pytest tests/test_kruskal.py::test_grafo_vazio` |
-| Kruskal | Grafo completo | ✅ | `pytest tests/test_kruskal.py::test_grafo_completo` |
+| Kruskal | Caso base | Aprovado | `pytest tests/test_kruskal.py::test_caso_base` |
+| Kruskal | Grafo vazio | Aprovado | `pytest tests/test_kruskal.py::test_grafo_vazio` |
+| Kruskal | Grafo completo | Aprovado | `pytest tests/test_kruskal.py::test_grafo_completo` |
 
 **Como rodar todos os testes:**
 ```bash
@@ -182,15 +182,15 @@ tests/test_kruskal.py::TestGrafoCompleto::test_grafo_desconexo_levanta_erro PASS
 
 | Funcionalidade | Status | Observação |
 |---------------|--------|------------|
-| Classe do grafo (Lista de Adjacência) | ✅ Completo | `src/core/graph.py` — fórmula de custo, BFS, factory `from_dict()` |
-| Estrutura Union-Find | ✅ Completo | `src/core/disjoint_set.py` — path compression + union by rank |
-| Algoritmo de Kruskal | ✅ Completo | `src/algorithms/kruskal.py` — O(E log E), early-exit, detecção de grafo desconexo |
-| Camada de I/O | ✅ Completo | `src/io/file_reader.py` — suporte a arquivo e bytes (upload) |
-| Camada de Serviço | ✅ Completo | `src/network_service.py` — orquestra I/O → Grafo → Conectividade → Kruskal |
-| Visualização do grafo (AGM) | ✅ Completo | `src/visualization/graph_plotter.py` — networkx + matplotlib, AGM destacada |
-| Tela de entrada | ✅ Completo | Interface Streamlit com `st.file_uploader` |
-| Tela de resultado | ✅ Completo | Grafo visual + tabela de cabos + custo total + métricas de tempo |
-| Testes unitários | ✅ Completo | 12 testes pytest — caso base, grafo vazio, grafo completo, desconexo |
+| Classe do grafo (Lista de Adjacência) | Completo | `src/core/graph.py` — fórmula de custo, BFS, factory `from_dict()` |
+| Estrutura Union-Find | Completo | `src/core/disjoint_set.py` — path compression + union by rank |
+| Algoritmo de Kruskal | Completo | `src/algorithms/kruskal.py` — O(E log E), early-exit, detecção de grafo desconexo |
+| Camada de I/O | Completo | `src/io/file_reader.py` — suporte a arquivo e bytes (upload) |
+| Camada de Serviço | Completo | `src/network_service.py` — orquestra I/O → Grafo → Conectividade → Kruskal |
+| Visualização do grafo (AGM) | Completo | `src/visualization/graph_plotter.py` — networkx + matplotlib, AGM destacada |
+| Tela de entrada | Completo | Interface Streamlit com `st.file_uploader` |
+| Tela de resultado | Completo | Grafo visual + tabela de cabos + custo total + métricas de tempo |
+| Testes unitários | Completo | 12 testes pytest — caso base, grafo vazio, grafo completo, desconexo |
 
 ---
 
@@ -199,7 +199,7 @@ tests/test_kruskal.py::TestGrafoCompleto::test_grafo_desconexo_levanta_erro PASS
 - [x] Repositório público e acessível
 - [x] .gitignore configurado
 - [x] README com instruções de execução do MVP
-- [x] Algoritmo principal executando sem erros (`pytest` → 12/12 ✅)
+- [x] Algoritmo principal executando sem erros (`pytest` → 12/12 Aprovados)
 - [x] Tela de entrada e tela de resultado demonstráveis (screenshots em `docs/assets/`)
 - [x] 3 testes unitários por algoritmo (12 testes cobrindo caso base, vazio, completo e desconexo)
 - [x] ≥ 5 commits com prefixos semânticos (feat:, fix:, test:, docs:) — 6 commits semânticos realizados

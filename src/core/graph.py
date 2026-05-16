@@ -24,6 +24,8 @@ class Graph:
         self._adj: dict[str, list[Edge]] = defaultdict(list)
         # Lista com todas as arestas (sem duplicatas — só uma direção cada)
         self._edges: list[Edge] = []
+        # Coordenadas opcionais para plotagem sobre mapas (x, y)
+        self._coords: dict[str, tuple[float, float]] = {}
 
     @property
     def vertices(self) -> list[str]:
@@ -43,9 +45,16 @@ class Graph:
     def num_edges(self) -> int:
         return len(self._edges)
 
-    def add_vertex(self, label: str) -> None:
-        """Adiciona um prédio (vértice) sem nenhuma conexão ainda."""
+    def add_vertex(self, label: str, x: float | None = None, y: float | None = None) -> None:
+        """Adiciona um prédio (vértice). Opcionalmente com coordenadas para mapa."""
         self._vertices.add(label)
+        if x is not None and y is not None:
+            self._coords[label] = (x, y)
+
+    @property
+    def coords(self) -> dict[str, tuple[float, float]]:
+        """Devolve as coordenadas dos vértices (se existirem)."""
+        return dict(self._coords)
 
     def add_edge(
         self,
@@ -121,8 +130,15 @@ class Graph:
         """
         graph = cls()
 
-        for vertex in data.get("vertices", []):
-            graph.add_vertex(vertex)
+        vertices_data = data.get("vertices", [])
+        if isinstance(vertices_data, dict):
+            # Novo formato com coordenadas: {"Predio": {"x": 10, "y": 20}}
+            for vertex, coords in vertices_data.items():
+                graph.add_vertex(vertex, coords.get("x"), coords.get("y"))
+        else:
+            # Formato clássico: ["Predio A", "Predio B"]
+            for vertex in vertices_data:
+                graph.add_vertex(vertex)
 
         for aresta in data.get("arestas", []):
             graph.add_edge(
