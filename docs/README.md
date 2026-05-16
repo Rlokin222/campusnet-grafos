@@ -12,8 +12,14 @@ Sistema que calcula a **Árvore Geradora Mínima (AGM)** para o planejamento de 
 O peso de cada aresta não é informado diretamente — ele é calculado internamente pela regra de negócio:
 
 ```
-Custo = (distância × fator_terreno) + (obstáculos × 50) + (diferença_andares × 100)
+Custo Financeiro (R$) = (distância × fator_terreno) + (obstáculos × 50) + (diferença_andares × 100)
 ```
+
+O valor que você vê na Árvore Geradora Mínima não é inventado; ele segue nossa equação de engenharia de redes:
+- **Distância Física:** Preço do cabo (fibra/metálico) por metro percorrido.
+- **Fator de Terreno:** Solo macio (1.0), asfalto (1.5) ou rocha (2.0) afetam o custo de perfuração e aluguel de máquinas.
+- **Obstáculos:** Paredes de concreto estrutural, vias públicas. Exigem taxas, laudos ou quebras complexas. Custo base adicionado: R$ 50,00 por barreira.
+- **Andares:** Cabeamento vertical (shafts) exige trabalho em altura e guinchos. Custo adicionado: R$ 100,00 por andar de desnível.
 
 | Parâmetro | Descrição |
 |---|---|
@@ -100,13 +106,21 @@ O navegador abrirá automaticamente em **http://localhost:8501**.
 
 ## Como usar
 
-1. Na barra lateral, clique em **"Carregar topologia (JSON)"**
-2. Faça o upload do arquivo `data/campus_mock.json` (ou do seu próprio arquivo)
+### Módulo 1: Painel Analítico
+1. Na barra lateral, selecione **"Painel Analítico"**.
+2. Faça o upload do arquivo JSON (ex: `data/campus_realista.json`).
 3. O sistema irá:
    - Validar a conectividade do grafo via BFS
    - Executar o Kruskal e calcular a AGM
-   - Exibir o grafo visual com as arestas da AGM destacadas
-   - Mostrar a tabela de cabos selecionados e o custo total
+   - Exibir o grafo visual com as arestas da AGM destacadas (podendo alternar entre mapas Blueprint e Satélite)
+   - Mostrar a tabela de cabos selecionados e o custo total financeiro
+
+### Módulo 2: Construtor Interativo
+1. Na barra lateral, selecione **"Construtor Interativo"**.
+2. Faça o upload de uma imagem do seu campus (Blueprint ou Satélite).
+3. **Mapeamento:** Clique na imagem para marcar a posição exata de um prédio e digite o nome dele.
+4. **Tabela de Conexões:** Use a tabela interativa para definir as ligações entre os prédios. Clique em "Gerar Combinações Automáticas" para criar todas as arestas possíveis ou adicione linhas manualmente. Edite os valores de Terreno, Obstáculos e Andares de cada trecho.
+5. Clique em **"Exportar JSON e Calcular AGM"**. O JSON será gerado na memória e você poderá visualizar o resultado no Painel Analítico.
 
 ---
 

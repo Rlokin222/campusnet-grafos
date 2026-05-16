@@ -1,4 +1,15 @@
+import json
+import math
+import pandas as pd
 import streamlit as st
+from io import BytesIO
+from PIL import Image
+
+try:
+    from streamlit_image_coordinates import streamlit_image_coordinates
+except ImportError:
+    streamlit_image_coordinates = None
+
 from src.network_service import process_campus_network
 from src.visualization.graph_plotter import plot_campus_graph
 
@@ -9,73 +20,30 @@ st.set_page_config(
     initial_sidebar_state="expanded",
 )
 
-# CSS Corporativo (Sem emojis, fontes sóbrias, layout limpo)
+# Inicialização de Estado para o Construtor
+if "builder_nodes" not in st.session_state:
+    st.session_state.builder_nodes = {}
+if "builder_edges" not in st.session_state:
+    st.session_state.builder_edges = pd.DataFrame(columns=[
+        "Origem", "Destino", "Distancia_m", "Fator_Terreno", "Obstaculos", "Andares"
+    ])
+if "generated_json" not in st.session_state:
+    st.session_state.generated_json = None
+
+# CSS Corporativo
 st.markdown(
     """
     <style>
         @import url('https://fonts.googleapis.com/css2?family=Roboto:wght@300;400;500;700&display=swap');
-
         html, body, [class*="css"] { font-family: 'Roboto', sans-serif; }
-
-        .header-title {
-            font-size: 2.2rem;
-            font-weight: 700;
-            color: #ffffff;
-            margin-bottom: 0.2rem;
-            letter-spacing: -0.5px;
-        }
-        .header-subtitle {
-            color: #a0aec0;
-            font-size: 1rem;
-            margin-bottom: 1.5rem;
-            font-weight: 400;
-        }
-
-        .metric-card {
-            background-color: #1e222d;
-            border: 1px solid #2b313f;
-            border-radius: 4px;
-            padding: 1.2rem;
-            text-align: left;
-            border-left: 4px solid #2962ff;
-        }
-        .metric-label { color: #8a8d93; font-size: 0.75rem; text-transform: uppercase; letter-spacing: 0.5px; margin-bottom: 0.5rem; font-weight: 500;}
+        .header-title { font-size: 2.2rem; font-weight: 700; color: #ffffff; margin-bottom: 0.2rem; }
+        .header-subtitle { color: #a0aec0; font-size: 1rem; margin-bottom: 1.5rem; }
+        .metric-card { background-color: #1e222d; border: 1px solid #2b313f; padding: 1.2rem; border-left: 4px solid #2962ff; }
+        .metric-label { color: #8a8d93; font-size: 0.75rem; text-transform: uppercase; font-weight: 500;}
         .metric-value { color: #ffffff; font-size: 1.5rem; font-weight: 700; }
-        .metric-value-sm { color: #ffffff; font-size: 1.1rem; font-weight: 500; }
-
-        .badge-ok  { background: rgba(0, 200, 83, 0.1); color: #00c853; padding: 4px 12px; border-radius: 2px; font-size: 0.8rem; font-weight: 600; border: 1px solid rgba(0, 200, 83, 0.2); }
-        .badge-err { background: rgba(213, 0, 0, 0.1); color: #d50000; padding: 4px 12px; border-radius: 2px; font-size: 0.8rem; font-weight: 600; border: 1px solid rgba(213, 0, 0, 0.2); }
-
-        .analysis-card {
-            background-color: #1e222d;
-            border: 1px solid #2b313f;
-            border-radius: 4px;
-            padding: 1rem;
-            height: 100%;
-        }
-        .analysis-label { color: #8a8d93; font-size: 0.75rem; text-transform: uppercase; letter-spacing: 0.5px; margin-bottom: 0.3rem;}
-        .analysis-value { color: #ffffff; font-size: 1rem; font-weight: 500; margin-bottom: 0.2rem;}
-        .analysis-subtext { color: #2962ff; font-size: 0.9rem; font-weight: 600; }
-
-        .section-title {
-            font-size: 1.1rem;
-            font-weight: 500;
-            color: #ffffff;
-            margin-bottom: 1rem;
-            margin-top: 1.5rem;
-            border-bottom: 1px solid #2b313f;
-            padding-bottom: 0.5rem;
-        }
-        
-        /* Ajustes das abas do Streamlit */
-        .stTabs [data-baseweb="tab-list"] {
-            gap: 2rem;
-            border-bottom: 1px solid #2b313f;
-        }
-        .stTabs [data-baseweb="tab"] {
-            padding-top: 1rem;
-            padding-bottom: 1rem;
-        }
+        .badge-ok  { background: rgba(0, 200, 83, 0.1); color: #00c853; padding: 4px 12px; border-radius: 2px; font-size: 0.8rem; }
+        .badge-err { background: rgba(213, 0, 0, 0.1); color: #d50000; padding: 4px 12px; border-radius: 2px; font-size: 0.8rem; }
+        .section-title { font-size: 1.1rem; font-weight: 500; color: #ffffff; margin-bottom: 1rem; margin-top: 1.5rem; border-bottom: 1px solid #2b313f; padding-bottom: 0.5rem; }
     </style>
     """,
     unsafe_allow_html=True,
@@ -86,155 +54,224 @@ st.markdown(
 # ---------------------------------------------------------------------------
 with st.sidebar:
     st.markdown("### CampusNet Solutions")
-    st.caption("Módulo de Engenharia de Redes")
-    
-    st.write("")
-    uploaded_file = st.file_uploader(
-        "Importar Topologia (JSON)",
-        type=["json"],
-        help="Arquivo contendo definições de vértices (com coordenadas) e arestas.",
-    )
+    modo = st.radio("Módulo de Operação", ["Painel Analítico", "Construtor Interativo"])
+    st.write("---")
 
-    st.write("")
-    st.markdown("**Controles de Visualização**")
-    bg_map_type = st.radio(
-        "Camada Base do Mapa",
-        options=["Nenhum", "Blueprint", "Satélite"],
-        index=1,
-        help="Altera o estilo do mapa de fundo. Requer dataset com coordenadas físicas."
-    )
+# ===========================================================================
+# MODO 1: PAINEL ANALÍTICO (Código Original Melhorado)
+# ===========================================================================
+if modo == "Painel Analítico":
+    st.markdown('<div class="header-title">Planejamento de Infraestrutura (AGM)</div>', unsafe_allow_html=True)
+    st.markdown('<div class="header-subtitle">Análise de custos e rotas ótimas utilizando o Algoritmo de Kruskal</div>', unsafe_allow_html=True)
 
-# ---------------------------------------------------------------------------
-# Header
-# ---------------------------------------------------------------------------
-st.markdown('<div class="header-title">Planejamento de Infraestrutura (AGM)</div>', unsafe_allow_html=True)
-st.markdown('<div class="header-subtitle">Análise de custos e rotas ótimas utilizando o Algoritmo de Kruskal</div>', unsafe_allow_html=True)
-
-if uploaded_file is None:
-    st.info("Aguardando importação do dataset. Por favor, carregue um arquivo JSON no painel lateral.")
-    
-    with st.expander("Especificação Técnica do JSON"):
-        st.code("""{
-  "vertices": {
-    "Prédio A": {"x": 300, "y": 450},
-    "Prédio B": {"x": 500, "y": 600}
-  },
-  "arestas": [
-    {
-      "origem": "Prédio A",
-      "destino": "Prédio B",
-      "distancia": 120.0,
-      "fator_terreno": 1.0,
-      "obstaculos": 0,
-      "andares": 1
-    }
-  ]
-}""", language="json")
-    st.stop()
-
-# ---------------------------------------------------------------------------
-# Processamento
-# ---------------------------------------------------------------------------
-with st.spinner("Processando topologia de rede..."):
-    try:
-        raw_bytes: bytes = uploaded_file.read()
-        result = process_campus_network(raw_bytes)
-    except Exception as exc:
-        st.error(f"Falha na validação do arquivo: {exc}")
-        st.stop()
-
-graph = result.graph
-
-# ---------------------------------------------------------------------------
-# Layout Principal (Abas)
-# ---------------------------------------------------------------------------
-tab_dashboard, tab_metodologia = st.tabs(["Painel de Análise", "Metodologia de Captação de Dados"])
-
-with tab_dashboard:
-    # -----------------------------------------------------------------------
-    # KPIs Gerais
-    # -----------------------------------------------------------------------
-    col_status, col_v, col_e, col_cost = st.columns(4)
-
-    with col_status:
-        badge = '<span class="badge-ok">Conectividade Validada</span>' if result.is_connected else '<span class="badge-err">Falha de Conexão</span>'
-        st.markdown(f'<div class="metric-card"><div class="metric-label">Status da Rede</div><div class="metric-value-sm" style="margin-top: 5px;">{badge}</div></div>', unsafe_allow_html=True)
-
-    with col_v:
-        st.markdown(f'<div class="metric-card"><div class="metric-label">Pontos de Acesso (Nós)</div><div class="metric-value">{graph.num_vertices}</div></div>', unsafe_allow_html=True)
-
-    with col_e:
-        st.markdown(f'<div class="metric-card"><div class="metric-label">Conexões Possíveis</div><div class="metric-value">{graph.num_edges}</div></div>', unsafe_allow_html=True)
+    with st.sidebar:
+        uploaded_file = st.file_uploader(
+            "Importar Topologia (JSON)",
+            type=["json"],
+            help="Arquivo contendo definições de vértices e arestas.",
+        )
+        st.markdown("**Controles de Visualização**")
+        bg_map_type = st.radio(
+            "Camada Base do Mapa",
+            options=["Nenhum", "Blueprint", "Satélite"],
+            index=1
+        )
         
-    with col_cost:
-        st.markdown(f'<div class="metric-card" style="border-left-color: #00c853;"><div class="metric-label">Custo Estimado (AGM)</div><div class="metric-value">R$ {result.total_cost:,.2f}</div></div>', unsafe_allow_html=True)
+        if st.session_state.generated_json:
+            st.success("JSON gerado pelo Construtor disponível na memória!")
 
-    if not result.is_connected:
-        st.error(f"Topologia inválida: Foram detectados nós isolados sem rota de conexão ({', '.join(result.isolated_nodes)}).")
+    raw_bytes = None
+    if uploaded_file is not None:
+        raw_bytes = uploaded_file.read()
+    elif st.session_state.generated_json is not None:
+        raw_bytes = st.session_state.generated_json.encode('utf-8')
+
+    if raw_bytes is None:
+        st.info("Aguardando importação do dataset. Carregue um arquivo JSON ou crie um no Construtor Interativo.")
         st.stop()
 
-    st.write("")
+    with st.spinner("Processando topologia de rede..."):
+        try:
+            result = process_campus_network(raw_bytes)
+        except Exception as exc:
+            st.error(f"Falha na validação do arquivo: {exc}")
+            st.stop()
 
-    # -----------------------------------------------------------------------
-    # Mapa Visual
-    # -----------------------------------------------------------------------
-    st.markdown('<div class="section-title">Visualização Espacial da Árvore Geradora Mínima</div>', unsafe_allow_html=True)
-    fig = plot_campus_graph(graph, result.mst_edges, bg_map_type=bg_map_type)
-    st.pyplot(fig, use_container_width=True)
+    graph = result.graph
+    tab_dashboard, tab_metodologia = st.tabs(["Painel de Análise", "Metodologia de Captação e Custos"])
 
-    # -----------------------------------------------------------------------
-    # Análise Financeira
-    # -----------------------------------------------------------------------
-    st.markdown('<div class="section-title">Análise Financeira e Estatísticas</div>', unsafe_allow_html=True)
-    
-    aresta_min = min(result.mst_edges, key=lambda e: e.peso)
-    aresta_max = max(result.mst_edges, key=lambda e: e.peso)
-    custo_todas = sum(e.peso for e in graph.edges)
-    economia = custo_todas - result.total_cost
+    with tab_dashboard:
+        col_status, col_v, col_e, col_cost = st.columns(4)
+        with col_status:
+            badge = '<span class="badge-ok">Conectividade Validada</span>' if result.is_connected else '<span class="badge-err">Falha de Conexão</span>'
+            st.markdown(f'<div class="metric-card"><div class="metric-label">Status da Rede</div><div style="margin-top: 5px;">{badge}</div></div>', unsafe_allow_html=True)
+        with col_v:
+            st.markdown(f'<div class="metric-card"><div class="metric-label">Pontos de Acesso (Nós)</div><div class="metric-value">{graph.num_vertices}</div></div>', unsafe_allow_html=True)
+        with col_e:
+            st.markdown(f'<div class="metric-card"><div class="metric-label">Conexões Possíveis</div><div class="metric-value">{graph.num_edges}</div></div>', unsafe_allow_html=True)
+        with col_cost:
+            st.markdown(f'<div class="metric-card" style="border-left-color: #00c853;"><div class="metric-label">Custo Estimado (AGM)</div><div class="metric-value">R$ {result.total_cost:,.2f}</div></div>', unsafe_allow_html=True)
 
-    a1, a2, a3, a4 = st.columns(4)
-    with a1:
-        st.markdown(f'<div class="analysis-card"><div class="analysis-label">Rota de Menor Custo</div><div class="analysis-value">{aresta_min.origem} → {aresta_min.destino}</div><div class="analysis-subtext">R$ {aresta_min.peso:,.2f}</div></div>', unsafe_allow_html=True)
-    with a2:
-        st.markdown(f'<div class="analysis-card"><div class="analysis-label">Rota de Maior Custo</div><div class="analysis-value">{aresta_max.origem} → {aresta_max.destino}</div><div class="analysis-subtext" style="color:#d50000;">R$ {aresta_max.peso:,.2f}</div></div>', unsafe_allow_html=True)
-    with a3:
-        st.markdown(f'<div class="analysis-card"><div class="analysis-label">Total de Cabos (AGM)</div><div class="analysis-value">{len(result.mst_edges)} Trechos</div><div class="analysis-subtext" style="color:#8a8d93;">Média: R$ {result.total_cost / len(result.mst_edges):,.2f} / trecho</div></div>', unsafe_allow_html=True)
-    with a4:
-        st.markdown(f'<div class="analysis-card"><div class="analysis-label">Eficiência de Custo</div><div class="analysis-value">Redução de {graph.num_edges - len(result.mst_edges)} conexões</div><div class="analysis-subtext" style="color:#00c853;">Economia: R$ {economia:,.2f}</div></div>', unsafe_allow_html=True)
+        if not result.is_connected:
+            st.error(f"Topologia inválida: Nós isolados encontrados ({', '.join(result.isolated_nodes)}).")
+            st.stop()
 
-    # -----------------------------------------------------------------------
-    # Tabela Analítica
-    # -----------------------------------------------------------------------
-    st.markdown('<div class="section-title">Relatório de Roteamento</div>', unsafe_allow_html=True)
-    
-    custo_acumulado = 0.0
-    table_data = []
-    for i, e in enumerate(result.mst_edges):
-        custo_acumulado += e.peso
-        table_data.append({
-            "Ordem": f"{i + 1:02d}",
-            "Ponto de Origem": e.origem,
-            "Ponto de Destino": e.destino,
-            "Custo Unitário": f"R$ {e.peso:,.2f}",
-            "Custo Acumulado": f"R$ {custo_acumulado:,.2f}",
-        })
-    st.dataframe(table_data, use_container_width=True, hide_index=True)
-    
-    st.caption(f"Processamento concluído em {result.total_time_ms:.2f}ms (Motor: Kruskal O(E log E)).")
+        st.markdown('<div class="section-title">Visualização Espacial da Árvore Geradora Mínima</div>', unsafe_allow_html=True)
+        fig = plot_campus_graph(graph, result.mst_edges, bg_map_type=bg_map_type)
+        st.pyplot(fig, use_container_width=True)
 
-with tab_metodologia:
-    st.markdown("### Processo de Engenharia de Dados", unsafe_allow_html=True)
-    st.write("A modelagem do grafo e o levantamento de custos não ocorrem de forma abstrata. No cenário real de implantação da CampusNet, os dados são alimentados no formato JSON através das seguintes etapas técnicas:")
-    
-    st.markdown("#### 1. Análise de Planta Baixa (AutoCAD/Revit)")
-    st.write("Utilizamos plantas arquitetônicas (*blueprints*) reais do campus para extrair as posições absolutas dos prédios. Essas posições são convertidas em coordenadas `(x, y)` no nosso JSON, permitindo que a visualização da rede seja renderizada fisicamente sobre o mapa da instituição.")
-    
-    st.markdown("#### 2. Vistoria Técnica em Campo (Site Survey)")
-    st.write("A distância em linha reta não define o custo real. Técnicos de campo realizam vistorias preenchendo os seguintes dados para cada possível conexão:")
-    st.markdown("- **Fator de Terreno:** Solo macio (1.0), asfalto (1.5) ou rocha (2.0) afetam o custo de escavação.")
-    st.markdown("- **Obstáculos Físicos:** Contagem de paredes de concreto, tubulações de gás ou elementos que requerem desvio/perfuração especializada.")
-    st.markdown("- **Diferença de Andares:** Instalações verticais (shafts) exigem equipamentos de segurança e elevadores de carga.")
-    
-    st.markdown("#### 3. Precificação e Conversão Algorítmica")
-    st.write("Os dados do levantamento são integrados ao sistema. A fórmula interna do CampusNet consolida os dados de *survey* com os valores de mercado para cabos de fibra óptica (por metro) e mão de obra, transformando a física do campus em um peso financeiro para cada aresta do grafo. Após isso, o Algoritmo de Kruskal é executado para definir o projeto de implantação mais viável.")
+        st.markdown('<div class="section-title">Relatório de Roteamento</div>', unsafe_allow_html=True)
+        table_data = []
+        custo_acumulado = 0.0
+        for i, e in enumerate(result.mst_edges):
+            custo_acumulado += e.peso
+            table_data.append({
+                "Ordem": f"{i + 1:02d}",
+                "Ponto de Origem": e.origem,
+                "Ponto de Destino": e.destino,
+                "Custo Unitário": f"R$ {e.peso:,.2f}",
+                "Custo Acumulado": f"R$ {custo_acumulado:,.2f}",
+            })
+        st.dataframe(table_data, use_container_width=True, hide_index=True)
 
+    with tab_metodologia:
+        st.markdown("### Processo de Engenharia de Dados", unsafe_allow_html=True)
+        st.write("A modelagem do grafo e o levantamento de custos não ocorrem de forma abstrata. No cenário real de implantação da CampusNet, os dados são alimentados no formato JSON através das seguintes etapas técnicas:")
+        
+        st.markdown("#### 1. Análise de Planta Baixa (AutoCAD/Revit)")
+        st.write("Utilizamos plantas arquitetônicas (*blueprints*) ou imagens de satélite reais do campus para extrair as posições absolutas dos prédios. No **Construtor Interativo**, o usuário gera essas coordenadas `(x, y)` clicando na imagem, mapeando perfeitamente a lógica visual com a física do campus.")
+        
+        st.markdown("#### 2. Cálculo de Custo Monetário Final (Arestas)")
+        st.write("O custo financeiro (R$) de cada conexão do grafo **depende diretamente dos parâmetros físicos** cadastrados na tabela do Construtor. O valor que você vê na Árvore Geradora Mínima não é inventado; ele segue nossa equação de engenharia de redes:")
+        st.info("**Custo Monetário = (Distância Física × Fator de Terreno) + (Obstáculos × 50) + (Diferença de Andares × 100)**")
+        st.write("De onde vêm esses parâmetros?")
+        st.markdown("- **Distância Física:** Preço do cabo (fibra/metálico) por metro percorrido.")
+        st.markdown("- **Fator de Terreno:** Solo macio (1.0), asfalto (1.5) ou rocha (2.0) afetam o custo de perfuração e aluguel de retroescavadeiras.")
+        st.markdown("- **Obstáculos:** (Ex: Paredes de concreto estrutural, vias públicas) Exigem taxas, laudos ou quebras complexas. Custo base adicionado: R$ 50,00 por barreira.")
+        st.markdown("- **Andares:** Cabeamento vertical (shafts) exige trabalho em altura (EPIs pesados) e guinchos. Custo adicionado: R$ 100,00 por andar de desnível.")
+        
+        st.markdown("#### 3. Motor Algorítmico (Kruskal)")
+        st.write("Após compilar esses parâmetros em um valor único em Reais (R$), o sistema roda o **Algoritmo de Kruskal**, que ordena todos os orçamentos do menor para o maior e descarta conexões redundantes que formariam ciclos, entregando o projeto mais enxuto e seguro para a universidade.")
+
+# ===========================================================================
+# MODO 2: CONSTRUTOR DE TOPOLOGIA (Novo Recurso Interativo)
+# ===========================================================================
+elif modo == "Construtor Interativo":
+    st.markdown('<div class="header-title">Construtor de Topologia Visual</div>', unsafe_allow_html=True)
+    st.markdown('<div class="header-subtitle">Carregue um mapa, demarque os prédios (clicando) e defina os custos das conexões.</div>', unsafe_allow_html=True)
+
+    if streamlit_image_coordinates is None:
+        st.error("Biblioteca `streamlit-image-coordinates` ausente. Execute: `pip install streamlit-image-coordinates`")
+        st.stop()
+
+    img_file = st.file_uploader("1. Faça Upload de um Mapa/Planta (PNG, JPG)", type=["png", "jpg", "jpeg"])
+    
+    if img_file:
+        img = Image.open(img_file)
+        
+        col1, col2 = st.columns([2, 1])
+        with col1:
+            st.markdown("**2. Clique na imagem para marcar a posição de um prédio:**")
+            value = streamlit_image_coordinates(img, key="map_click")
+            
+        with col2:
+            st.markdown("**Adicionar Ponto**")
+            if value is not None:
+                x, y = value["x"], value["y"]
+                st.write(f"Coordenadas selecionadas: X:{x}, Y:{y}")
+                node_name = st.text_input("Nome do Prédio/Local:")
+                if st.button("Salvar Ponto", type="primary"):
+                    if node_name:
+                        st.session_state.builder_nodes[node_name] = {"x": x, "y": y}
+                        st.rerun()
+                    else:
+                        st.warning("Dê um nome ao ponto.")
+            else:
+                st.info("Clique na imagem para capturar coordenadas.")
+
+            st.write("---")
+            st.markdown("**Pontos Cadastrados:**")
+            if st.session_state.builder_nodes:
+                df_nodes = pd.DataFrame([
+                    {"Nome": k, "X": v["x"], "Y": v["y"]} 
+                    for k, v in st.session_state.builder_nodes.items()
+                ])
+                st.dataframe(df_nodes, hide_index=True)
+                if st.button("Limpar Pontos"):
+                    st.session_state.builder_nodes = {}
+                    st.session_state.builder_edges = pd.DataFrame(columns=[
+                        "Origem", "Destino", "Distancia_m", "Fator_Terreno", "Obstaculos", "Andares"
+                    ])
+                    st.rerun()
+            else:
+                st.caption("Nenhum ponto cadastrado ainda.")
+
+        st.markdown('<div class="section-title">3. Tabela de Conexões e Custos Base</div>', unsafe_allow_html=True)
+        st.write("Defina as conexões entre os pontos. Edite diretamente na tabela abaixo. O custo monetário será gerado na análise!")
+        
+        # Botões de utilidade
+        col_btn1, col_btn2 = st.columns(2)
+        with col_btn1:
+            if st.button("Gerar Combinações Automáticas"):
+                nodes_list = list(st.session_state.builder_nodes.keys())
+                edges = []
+                # Gera um grafo completo (todas as combinações possíveis)
+                for i in range(len(nodes_list)):
+                    for j in range(i + 1, len(nodes_list)):
+                        n1, n2 = nodes_list[i], nodes_list[j]
+                        # Calcula distancia euclidiana como base default
+                        c1 = st.session_state.builder_nodes[n1]
+                        c2 = st.session_state.builder_nodes[n2]
+                        dist = round(math.sqrt((c1["x"] - c2["x"])**2 + (c1["y"] - c2["y"])**2) / 2.5, 1)
+                        edges.append({
+                            "Origem": n1, "Destino": n2, "Distancia_m": dist,
+                            "Fator_Terreno": 1.0, "Obstaculos": 0, "Andares": 0
+                        })
+                st.session_state.builder_edges = pd.DataFrame(edges)
+                st.rerun()
+        
+        # Tabela editável
+        edited_df = st.data_editor(
+            st.session_state.builder_edges,
+            num_rows="dynamic",
+            use_container_width=True,
+            column_config={
+                "Origem": st.column_config.SelectboxColumn("Origem", options=list(st.session_state.builder_nodes.keys()), required=True),
+                "Destino": st.column_config.SelectboxColumn("Destino", options=list(st.session_state.builder_nodes.keys()), required=True),
+                "Distancia_m": st.column_config.NumberColumn("Distância (m)", min_value=0.1, format="%.1f"),
+                "Fator_Terreno": st.column_config.NumberColumn("Fator Terreno", min_value=1.0, format="%.2f"),
+                "Obstaculos": st.column_config.NumberColumn("Obstáculos (un)", min_value=0, step=1),
+                "Andares": st.column_config.NumberColumn("Desnível (Andares)", min_value=0, step=1),
+            }
+        )
+        
+        # Salva as edições feitas pelo usuário no state
+        st.session_state.builder_edges = edited_df
+
+        st.write("---")
+        if st.button("🏗️ Exportar JSON e Calcular AGM", type="primary"):
+            if len(st.session_state.builder_nodes) < 2:
+                st.error("Cadastre pelo menos 2 pontos.")
+            elif edited_df.empty:
+                st.error("Cadastre pelo menos uma conexão.")
+            else:
+                # Transforma a tabela num formato compatível com o JSON da nossa regra de negócio
+                arestas_json = []
+                for _, row in edited_df.iterrows():
+                    # Ignora linhas vazias
+                    if pd.isna(row["Origem"]) or pd.isna(row["Destino"]): continue
+                    arestas_json.append({
+                        "origem": row["Origem"],
+                        "destino": row["Destino"],
+                        "distancia": float(row["Distancia_m"]),
+                        "fator_terreno": float(row["Fator_Terreno"]),
+                        "obstaculos": int(row["Obstaculos"]),
+                        "andares": int(row["Andares"])
+                    })
+                
+                final_dict = {
+                    "vertices": st.session_state.builder_nodes,
+                    "arestas": arestas_json
+                }
+                st.session_state.generated_json = json.dumps(final_dict, indent=2)
+                st.success("JSON gerado com sucesso! Mude para o 'Painel Analítico' na barra lateral para ver o resultado.")
