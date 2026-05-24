@@ -1,14 +1,13 @@
 import json
-import math
 import pandas as pd
 import streamlit as st
-from io import BytesIO
-from PIL import Image, ImageDraw
+import folium
+from geopy.distance import geodesic
 
 try:
-    from streamlit_image_coordinates import streamlit_image_coordinates
+    from streamlit_folium import st_folium
 except ImportError:
-    streamlit_image_coordinates = None
+    st_folium = None
 
 from src.network_service import process_campus_network
 from src.visualization.graph_plotter import plot_campus_graph
@@ -58,7 +57,7 @@ with st.sidebar:
     st.write("---")
 
 # ===========================================================================
-# MODO 1: PAINEL ANALÍTICO (Código Original Melhorado)
+# MODO 1: PAINEL ANALÍTICO
 # ===========================================================================
 if modo == "Painel Analítico":
     st.markdown('<div class="header-title">Planejamento de Infraestrutura (AGM)</div>', unsafe_allow_html=True)
@@ -74,7 +73,7 @@ if modo == "Painel Analítico":
         bg_map_type = st.radio(
             "Camada Base do Mapa",
             options=["Nenhum", "Blueprint", "Satélite"],
-            index=1
+            index=0
         )
         
         if st.session_state.generated_json:
@@ -116,7 +115,7 @@ if modo == "Painel Analítico":
             st.error(f"Topologia inválida: Nós isolados encontrados ({', '.join(result.isolated_nodes)}).")
             st.stop()
 
-        st.markdown('<div class="section-title">Visualização Espacial da Árvore Geradora Mínima</div>', unsafe_allow_html=True)
+        st.markdown('<div class="section-title">Visualização do Grafo</div>', unsafe_allow_html=True)
         fig = plot_campus_graph(graph, result.mst_edges, bg_map_type=bg_map_type)
         st.pyplot(fig, use_container_width=True)
 
@@ -138,180 +137,160 @@ if modo == "Painel Analítico":
         st.markdown("### Processo de Engenharia de Dados", unsafe_allow_html=True)
         st.write("A modelagem do grafo e o levantamento de custos não ocorrem de forma abstrata. No cenário real de implantação da CampusNet, os dados são alimentados no formato JSON através das seguintes etapas técnicas:")
         
-        st.markdown("#### 1. Análise de Planta Baixa (AutoCAD/Revit)")
-        st.write("Utilizamos plantas arquitetônicas (*blueprints*) ou imagens de satélite reais do campus para extrair as posições absolutas dos prédios. No **Construtor Interativo**, o usuário gera essas coordenadas `(x, y)` clicando na imagem, mapeando perfeitamente a lógica visual com a física do campus.")
+        st.markdown("#### 1. Mapeamento Geoespacial (GPS)")
+        st.write("Utilizamos mapas reais via satélite (Folium/OpenStreetMap) para extrair as posições absolutas dos prédios na Terra. No **Construtor Interativo**, o usuário gera essas coordenadas `(Latitude, Longitude)` clicando no mapa, mapeando a posição global de cada edifício.")
         
         st.markdown("#### 2. Cálculo de Custo Monetário Final (Arestas)")
-        st.write("O custo financeiro (R$) de cada conexão do grafo **depende diretamente dos parâmetros físicos** cadastrados na tabela do Construtor. O valor que você vê na Árvore Geradora Mínima não é inventado; ele segue nossa equação de engenharia de redes:")
-        st.info("**Custo Monetário = (Distância Física × Fator de Terreno) + (Obstáculos × 50) + (Diferença de Andares × 100)**")
+        st.write("O custo financeiro (R$) de cada conexão do grafo **depende diretamente dos parâmetros físicos**. O valor que você vê na Árvore Geradora Mínima não é inventado; ele segue nossa equação de engenharia de redes:")
+        st.info("**Custo Monetário = (Distância Geodésica × Fator de Terreno) + (Obstáculos × 50) + (Diferença de Andares × 100)**")
         st.write("De onde vêm esses parâmetros?")
-        st.markdown("- **Distância Física:** Preço do cabo (fibra/metálico) por metro percorrido.")
-        st.markdown("- **Fator de Terreno:** Solo macio (1.0), asfalto (1.5) ou rocha (2.0) afetam o custo de perfuração e aluguel de retroescavadeiras.")
-        st.markdown("- **Obstáculos:** (Ex: Paredes de concreto estrutural, vias públicas) Exigem taxas, laudos ou quebras complexas. Custo base adicionado: R$ 50,00 por barreira.")
-        st.markdown("- **Andares:** Cabeamento vertical (shafts) exige trabalho em altura (EPIs pesados) e guinchos. Custo adicionado: R$ 100,00 por andar de desnível.")
+        st.markdown("- **Distância Física:** Calculada usando a fórmula geodésica baseada no formato elipsoide da Terra (em metros reais) e multiplicada pelo preço do cabo por metro.")
+        st.markdown("- **Fator de Terreno:** Solo macio (1.0), asfalto (1.5) ou rocha (2.0) afetam o custo de perfuração.")
+        st.markdown("- **Obstáculos:** Exigem taxas, laudos ou quebras complexas. Custo base adicionado: R$ 50,00 por barreira.")
+        st.markdown("- **Andares:** Custo adicionado de R$ 100,00 por andar de desnível.")
         
         st.markdown("#### 3. Motor Algorítmico (Kruskal)")
-        st.write("Após compilar esses parâmetros em um valor único em Reais (R$), o sistema roda o **Algoritmo de Kruskal**, que ordena todos os orçamentos do menor para o maior e descarta conexões redundantes que formariam ciclos, entregando o projeto mais enxuto e seguro para a universidade.")
+        st.write("Após compilar esses parâmetros em um valor único em Reais (R$), o sistema roda o **Algoritmo de Kruskal**, descartando redundâncias para entregar o projeto mais enxuto e seguro para a universidade.")
 
 # ===========================================================================
-# MODO 2: CONSTRUTOR DE TOPOLOGIA (Novo Recurso Interativo)
+# MODO 2: CONSTRUTOR DE TOPOLOGIA (Folium Map)
 # ===========================================================================
 elif modo == "Construtor Interativo":
-    st.markdown('<div class="header-title">Construtor de Topologia Visual</div>', unsafe_allow_html=True)
-    st.markdown('<div class="header-subtitle">Carregue um mapa, demarque os prédios (clicando) e defina os custos das conexões.</div>', unsafe_allow_html=True)
+    st.markdown('<div class="header-title">Construtor de Topologia Geoespacial</div>', unsafe_allow_html=True)
+    st.markdown('<div class="header-subtitle">Navegue no mapa mundial, clique para adicionar prédios (GPS) e calcule a infraestrutura.</div>', unsafe_allow_html=True)
 
-    if streamlit_image_coordinates is None:
-        st.error("Biblioteca `streamlit-image-coordinates` ausente. Execute: `pip install streamlit-image-coordinates`")
+    if st_folium is None:
+        st.error("Biblioteca `streamlit-folium` ausente. Execute: `pip install -r requirements.txt`")
         st.stop()
 
-    img_file = st.file_uploader("1. Faça Upload de um Mapa/Planta (PNG, JPG)", type=["png", "jpg", "jpeg"])
+    col1, col2 = st.columns([2, 1])
     
-    if img_file:
-        original_img = Image.open(img_file).convert("RGBA")
+    with col1:
+        st.markdown("**1. Clique no mapa para capturar a Latitude e Longitude:**")
+        # Centro inicial do mapa (pode ser ajustado ou o usuário dá zoom/pan livremente)
+        m = folium.Map(location=[-23.5505, -46.6333], zoom_start=14)
         
-        # --- Desenha os pontos salvos e o clique atual na imagem ---
-        overlay = Image.new("RGBA", original_img.size, (255, 255, 255, 0))
-        draw = ImageDraw.Draw(overlay)
-        r = 12 # Raio da bola
-        
-        # Bolas azuis transparentes para os pontos já salvos
-        for node_data in st.session_state.builder_nodes.values():
-            px, py = node_data["x"], node_data["y"]
-            draw.ellipse([px-r, py-r, px+r, py+r], fill=(41, 98, 255, 180))
+        # Adiciona marcadores para pontos já cadastrados
+        for name, coords in st.session_state.builder_nodes.items():
+            folium.Marker(
+                [coords["lat"], coords["lon"]],
+                popup=name,
+                icon=folium.Icon(color="blue", icon="info-sign")
+            ).add_to(m)
             
-        # Pega a última coordenada clicada do session_state (se houver) para desenhar o "pendente"
-        # O componente image_coordinates cuida de atualizar esse valor.
+        # Captura os dados do mapa
+        map_data = st_folium(m, width=700, height=500, key="interactive_map")
         
-        # Mescla a camada de desenho com a imagem original
-        img_to_render = Image.alpha_composite(original_img, overlay)
+    with col2:
+        st.markdown("**Adicionar Ponto**")
+        lat, lon = None, None
         
-        col1, col2 = st.columns([2, 1])
-        with col1:
-            st.markdown("**2. Clique na imagem para marcar a posição de um prédio:**")
-            value = streamlit_image_coordinates(img_to_render, key="map_click")
+        if map_data and map_data.get("last_clicked"):
+            lat = map_data["last_clicked"]["lat"]
+            lon = map_data["last_clicked"]["lng"]
+            st.write(f"📍 Coordenada GPS capturada:\n**Lat: {lat:.6f}\nLon: {lon:.6f}**")
             
-        with col2:
-            st.markdown("**Adicionar Ponto**")
-            if value is not None:
-                x, y = value["x"], value["y"]
-                st.write(f"📍 Coordenada selecionada: **X: {x}, Y: {y}**")
-                node_name = st.text_input("Nome do Prédio/Local:")
-                if st.button("Salvar Ponto", type="primary"):
-                    if node_name:
-                        st.session_state.builder_nodes[node_name] = {"x": x, "y": y}
-                        st.rerun()
-                    else:
-                        st.warning("Dê um nome ao ponto.")
-            else:
-                st.info("Clique na imagem para capturar coordenadas.")
-
-            st.write("---")
-            st.markdown("**Pontos Cadastrados:**")
-            if st.session_state.builder_nodes:
-                df_nodes = pd.DataFrame([
-                    {"Nome": k, "X": v["x"], "Y": v["y"]} 
-                    for k, v in st.session_state.builder_nodes.items()
-                ])
-                # Tabela editável para os nós
-                edited_nodes = st.data_editor(df_nodes, hide_index=True, num_rows="dynamic", use_container_width=True)
-                
-                # Sincronizar edições da tabela com o state
-                new_nodes = {}
-                for _, row in edited_nodes.iterrows():
-                    if pd.notna(row["Nome"]):
-                        new_nodes[str(row["Nome"])] = {"x": int(row["X"]), "y": int(row["Y"])}
-                st.session_state.builder_nodes = new_nodes
-
-                if st.button("Limpar Pontos"):
-                    st.session_state.builder_nodes = {}
-                    st.session_state.builder_edges = pd.DataFrame(columns=[
-                        "Origem", "Destino", "Distancia_m", "Fator_Terreno", "Obstaculos", "Andares"
-                    ])
+            node_name = st.text_input("Nome do Prédio/Local:")
+            if st.button("Salvar Ponto no Mapa", type="primary"):
+                if node_name:
+                    st.session_state.builder_nodes[node_name] = {"lat": lat, "lon": lon}
                     st.rerun()
-            else:
-                st.caption("Nenhum ponto cadastrado ainda.")
-            
-            st.markdown(
-                """
-                <div style="background-color: rgba(41, 98, 255, 0.1); padding: 10px; border-radius: 5px; margin-top: 15px; border-left: 3px solid #2962ff;">
-                    <strong style="color: #2962ff; font-size: 0.85rem;">Como funcionam os valores de X e Y?</strong><br>
-                    <span style="font-size: 0.8rem; color: #a0aec0;">
-                    <b>X</b> (horizontal) e <b>Y</b> (vertical) são as coordenadas em <b>pixels</b> da imagem. O canto superior esquerdo é o marco 0,0.<br>
-                    Eles servem para duas coisas:<br>
-                    1. Posicionar o prédio perfeitamente em cima do mapa visual.<br>
-                    2. Servir como base de escala para calcular a distância física entre um prédio e outro nas Conexões Automáticas.<br><br>
-                    Você pode defini-los <b>clicando na imagem</b> ou <b>editando manualmente os números na tabela acima</b>.
-                    </span>
-                </div>
-                """, unsafe_allow_html=True
-            )
-
-        st.markdown('<div class="section-title">3. Tabela de Conexões e Custos Base</div>', unsafe_allow_html=True)
-        st.write("Defina as conexões entre os pontos. Edite diretamente na tabela abaixo. O custo monetário será gerado na análise!")
-        
-        # Botões de utilidade
-        col_btn1, col_btn2 = st.columns(2)
-        with col_btn1:
-            if st.button("Gerar Combinações Automáticas"):
-                nodes_list = list(st.session_state.builder_nodes.keys())
-                edges = []
-                # Gera um grafo completo (todas as combinações possíveis)
-                for i in range(len(nodes_list)):
-                    for j in range(i + 1, len(nodes_list)):
-                        n1, n2 = nodes_list[i], nodes_list[j]
-                        # Calcula distancia euclidiana como base default
-                        c1 = st.session_state.builder_nodes[n1]
-                        c2 = st.session_state.builder_nodes[n2]
-                        dist = round(math.sqrt((c1["x"] - c2["x"])**2 + (c1["y"] - c2["y"])**2) / 2.5, 1)
-                        edges.append({
-                            "Origem": n1, "Destino": n2, "Distancia_m": dist,
-                            "Fator_Terreno": 1.0, "Obstaculos": 0, "Andares": 0
-                        })
-                st.session_state.builder_edges = pd.DataFrame(edges)
-                st.rerun()
-        
-        # Tabela editável
-        edited_df = st.data_editor(
-            st.session_state.builder_edges,
-            num_rows="dynamic",
-            use_container_width=True,
-            column_config={
-                "Origem": st.column_config.SelectboxColumn("Origem", options=list(st.session_state.builder_nodes.keys()), required=True),
-                "Destino": st.column_config.SelectboxColumn("Destino", options=list(st.session_state.builder_nodes.keys()), required=True),
-                "Distancia_m": st.column_config.NumberColumn("Distância (m)", min_value=0.1, format="%.1f"),
-                "Fator_Terreno": st.column_config.NumberColumn("Fator Terreno", min_value=1.0, format="%.2f"),
-                "Obstaculos": st.column_config.NumberColumn("Obstáculos (un)", min_value=0, step=1),
-                "Andares": st.column_config.NumberColumn("Desnível (Andares)", min_value=0, step=1),
-            }
-        )
-        
-        # Salva as edições feitas pelo usuário no state
-        st.session_state.builder_edges = edited_df
+                else:
+                    st.warning("Dê um nome ao ponto.")
+        else:
+            st.info("Clique em qualquer lugar do mapa para obter as coordenadas.")
 
         st.write("---")
-        if st.button("🏗️ Exportar JSON e Calcular AGM", type="primary"):
-            if len(st.session_state.builder_nodes) < 2:
-                st.error("Cadastre pelo menos 2 pontos.")
-            elif edited_df.empty:
-                st.error("Cadastre pelo menos uma conexão.")
-            else:
-                # Transforma a tabela num formato compatível com o JSON da nossa regra de negócio
-                arestas_json = []
-                for _, row in edited_df.iterrows():
-                    # Ignora linhas vazias
-                    if pd.isna(row["Origem"]) or pd.isna(row["Destino"]): continue
-                    arestas_json.append({
-                        "origem": row["Origem"],
-                        "destino": row["Destino"],
-                        "distancia": float(row["Distancia_m"]),
-                        "fator_terreno": float(row["Fator_Terreno"]),
-                        "obstaculos": int(row["Obstaculos"]),
-                        "andares": int(row["Andares"])
+        st.markdown("**Pontos Cadastrados:**")
+        if st.session_state.builder_nodes:
+            df_nodes = pd.DataFrame([
+                {"Nome": k, "Lat": v["lat"], "Lon": v["lon"]} 
+                for k, v in st.session_state.builder_nodes.items()
+            ])
+            # Tabela editável para os nós
+            edited_nodes = st.data_editor(df_nodes, hide_index=True, num_rows="dynamic", use_container_width=True)
+            
+            # Sincronizar edições da tabela com o state
+            new_nodes = {}
+            for _, row in edited_nodes.iterrows():
+                if pd.notna(row["Nome"]):
+                    new_nodes[str(row["Nome"])] = {"lat": float(row["Lat"]), "lon": float(row["Lon"])}
+            st.session_state.builder_nodes = new_nodes
+
+            if st.button("Limpar Mapa"):
+                st.session_state.builder_nodes = {}
+                st.session_state.builder_edges = pd.DataFrame(columns=[
+                    "Origem", "Destino", "Distancia_m", "Fator_Terreno", "Obstaculos", "Andares"
+                ])
+                st.rerun()
+        else:
+            st.caption("Nenhum prédio cadastrado ainda.")
+
+    st.markdown('<div class="section-title">2. Tabela de Conexões e Custos Reais</div>', unsafe_allow_html=True)
+    st.write("Defina as conexões entre os prédios. Clique abaixo para cruzar os pontos e calcular as distâncias reais em metros.")
+    
+    col_btn1, col_btn2 = st.columns(2)
+    with col_btn1:
+        if st.button("Gerar Combinações e Distâncias GPS"):
+            nodes_list = list(st.session_state.builder_nodes.keys())
+            edges = []
+            # Gera um grafo completo
+            for i in range(len(nodes_list)):
+                for j in range(i + 1, len(nodes_list)):
+                    n1, n2 = nodes_list[i], nodes_list[j]
+                    c1 = st.session_state.builder_nodes[n1]
+                    c2 = st.session_state.builder_nodes[n2]
+                    # Calcula distância geodésica em metros (reais)
+                    p1 = (c1["lat"], c1["lon"])
+                    p2 = (c2["lat"], c2["lon"])
+                    dist_meters = round(geodesic(p1, p2).meters, 1)
+                    
+                    edges.append({
+                        "Origem": n1, "Destino": n2, "Distancia_m": dist_meters,
+                        "Fator_Terreno": 1.0, "Obstaculos": 0, "Andares": 0
                     })
-                
-                final_dict = {
-                    "vertices": st.session_state.builder_nodes,
-                    "arestas": arestas_json
-                }
-                st.session_state.generated_json = json.dumps(final_dict, indent=2)
-                st.success("JSON gerado com sucesso! Mude para o 'Painel Analítico' na barra lateral para ver o resultado.")
+            st.session_state.builder_edges = pd.DataFrame(edges)
+            st.rerun()
+    
+    # Tabela editável (A distância gerada é real, mas o usuário pode ajustar se necessário)
+    edited_df = st.data_editor(
+        st.session_state.builder_edges,
+        num_rows="dynamic",
+        use_container_width=True,
+        column_config={
+            "Origem": st.column_config.SelectboxColumn("Origem", options=list(st.session_state.builder_nodes.keys()), required=True),
+            "Destino": st.column_config.SelectboxColumn("Destino", options=list(st.session_state.builder_nodes.keys()), required=True),
+            "Distancia_m": st.column_config.NumberColumn("Distância GPS (m)", min_value=0.1, format="%.1f"),
+            "Fator_Terreno": st.column_config.NumberColumn("Fator Terreno", min_value=1.0, format="%.2f"),
+            "Obstaculos": st.column_config.NumberColumn("Obstáculos (un)", min_value=0, step=1),
+            "Andares": st.column_config.NumberColumn("Desnível (Andares)", min_value=0, step=1),
+        }
+    )
+    
+    st.session_state.builder_edges = edited_df
+
+    st.write("---")
+    if st.button("🏗️ Exportar Projeto e Calcular AGM", type="primary"):
+        if len(st.session_state.builder_nodes) < 2:
+            st.error("Cadastre pelo menos 2 pontos.")
+        elif edited_df.empty:
+            st.error("Cadastre pelo menos uma conexão.")
+        else:
+            arestas_json = []
+            for _, row in edited_df.iterrows():
+                if pd.isna(row["Origem"]) or pd.isna(row["Destino"]): continue
+                arestas_json.append({
+                    "origem": row["Origem"],
+                    "destino": row["Destino"],
+                    "distancia": float(row["Distancia_m"]),
+                    "fator_terreno": float(row["Fator_Terreno"]),
+                    "obstaculos": int(row["Obstaculos"]),
+                    "andares": int(row["Andares"])
+                })
+            
+            final_dict = {
+                "vertices": st.session_state.builder_nodes,
+                "arestas": arestas_json
+            }
+            st.session_state.generated_json = json.dumps(final_dict, indent=2)
+            st.success("JSON gerado com sucesso! Mude para o 'Painel Analítico' na barra lateral para ver o grafo final.")
