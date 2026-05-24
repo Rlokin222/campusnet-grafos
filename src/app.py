@@ -180,11 +180,24 @@ elif modo == "Construtor Interativo":
     
     with col1:
         st.markdown("**1. Clique no mapa para capturar a Latitude e Longitude:**")
-        # Centro inicial do mapa (pode ser ajustado ou o usuário dá zoom/pan livremente)
-        m = folium.Map(location=[-23.5505, -46.6333], zoom_start=14)
+        # Centro inicial do mapa
+        m = folium.Map(location=[-23.5505, -46.6333], zoom_start=14, tiles=None)
         
-        # Adiciona a barra de pesquisa (Geocoder)
-        Geocoder(position="topleft").add_to(m)
+        # Adiciona as opções de Camadas (Ruas e Satélite)
+        folium.TileLayer('OpenStreetMap', name='Ruas (Padrão)').add_to(m)
+        folium.TileLayer(
+            tiles='https://server.arcgisonline.com/ArcGIS/rest/services/World_Imagery/MapServer/tile/{z}/{y}/{x}',
+            attr='Esri',
+            name='Satélite (Esri)',
+            overlay=False,
+            control=True
+        ).add_to(m)
+        
+        # Adiciona o controle para o usuário alternar entre Satélite e Ruas
+        folium.LayerControl().add_to(m)
+        
+        # Adiciona a barra de pesquisa (Lupa) sem forçar posição para evitar bugs no Streamlit
+        Geocoder().add_to(m)
         
         # Adiciona marcadores para pontos já cadastrados
         for name, coords in st.session_state.builder_nodes.items():
