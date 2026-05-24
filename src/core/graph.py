@@ -132,9 +132,12 @@ class Graph:
 
         vertices_data = data.get("vertices", [])
         if isinstance(vertices_data, dict):
-            # Novo formato com coordenadas: {"Predio": {"x": 10, "y": 20}}
+            # Suporta o antigo formato (x,y) e o novo formato geoespacial (lat,lon)
             for vertex, coords in vertices_data.items():
-                graph.add_vertex(vertex, coords.get("x"), coords.get("y"))
+                # X é usualmente Longitude, Y é usualmente Latitude para plotagem 2D
+                x = coords.get("x", coords.get("lon"))
+                y = coords.get("y", coords.get("lat"))
+                graph.add_vertex(vertex, x, y)
         else:
             # Formato clássico: ["Predio A", "Predio B"]
             for vertex in vertices_data:
