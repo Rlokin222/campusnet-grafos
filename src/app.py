@@ -2,6 +2,7 @@ import json
 import pandas as pd
 import streamlit as st
 import folium
+from folium.plugins import Geocoder
 from geopy.distance import geodesic
 
 try:
@@ -181,6 +182,9 @@ elif modo == "Construtor Interativo":
         st.markdown("**1. Clique no mapa para capturar a Latitude e Longitude:**")
         # Centro inicial do mapa (pode ser ajustado ou o usuário dá zoom/pan livremente)
         m = folium.Map(location=[-23.5505, -46.6333], zoom_start=14)
+        
+        # Adiciona a barra de pesquisa (Geocoder)
+        Geocoder(position="topleft").add_to(m)
         
         # Adiciona marcadores para pontos já cadastrados
         for name, coords in st.session_state.builder_nodes.items():
