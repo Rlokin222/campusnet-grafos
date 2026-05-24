@@ -16,7 +16,7 @@ Custo Financeiro (R$) = (distância × fator_terreno) + (obstáculos × 50) + (d
 ```
 
 O valor que você vê na Árvore Geradora Mínima não é inventado; ele segue nossa equação de engenharia de redes:
-- **Distância Física:** Preço do cabo (fibra/metálico) por metro percorrido.
+- **Distância Física (m):** Medida real entre coordenadas de Latitude e Longitude usando fórmula geodésica. Equivale ao preço base do cabo (fibra/metálico) por metro percorrido.
 - **Fator de Terreno:** Solo macio (1.0), asfalto (1.5) ou rocha (2.0) afetam o custo de perfuração e aluguel de máquinas.
 - **Obstáculos:** Paredes de concreto estrutural, vias públicas. Exigem taxas, laudos ou quebras complexas. Custo base adicionado: R$ 50,00 por barreira.
 - **Andares:** Cabeamento vertical (shafts) exige trabalho em altura e guinchos. Custo adicionado: R$ 100,00 por andar de desnível.
@@ -112,15 +112,16 @@ O navegador abrirá automaticamente em **http://localhost:8501**.
 3. O sistema irá:
    - Validar a conectividade do grafo via BFS
    - Executar o Kruskal e calcular a AGM
-   - Exibir o grafo visual com as arestas da AGM destacadas (podendo alternar entre mapas Blueprint e Satélite)
+   - Exibir o grafo visual com as arestas da AGM destacadas.
    - Mostrar a tabela de cabos selecionados e o custo total financeiro
 
-### Módulo 2: Construtor Interativo
+### Módulo 2: Construtor de Topologia Geoespacial (Mundo Real)
 1. Na barra lateral, selecione **"Construtor Interativo"**.
-2. Faça o upload de uma imagem do seu campus (Blueprint ou Satélite).
-3. **Mapeamento:** Clique na imagem para marcar a posição exata de um prédio e digite o nome dele.
-4. **Tabela de Conexões:** Use a tabela interativa para definir as ligações entre os prédios. Clique em "Gerar Combinações Automáticas" para criar todas as arestas possíveis ou adicione linhas manualmente. Edite os valores de Terreno, Obstáculos e Andares de cada trecho.
-5. Clique em **"Exportar JSON e Calcular AGM"**. O JSON será gerado na memória e você poderá visualizar o resultado no Painel Analítico.
+2. Um mapa mundial real e interativo (Folium/OpenStreetMap) será carregado.
+3. **Mapeamento GPS:** Navegue no mapa até sua universidade, clique para marcar a posição exata de um prédio e digite o nome dele. O sistema captura a Latitude e Longitude (GPS).
+4. **Distâncias Reais em Metros:** Clique em "Gerar Combinações e Distâncias GPS". O sistema aplica cálculos geodésicos para medir a distância real em metros entre os prédios.
+5. Ajuste os valores de Terreno, Obstáculos e Andares de cada trecho na tabela interativa.
+6. Clique em **"Exportar Projeto e Calcular AGM"**. O JSON com as coordenadas globais será gerado e processado.
 
 ---
 
