@@ -115,7 +115,7 @@ O navegador abrirá automaticamente em **http://localhost:8501**.
    - Exibir o grafo visual com as arestas da AGM destacadas.
    - Mostrar a tabela de cabos selecionados e o custo total financeiro
 
-### Módulo 2: Construtor de Topologia Geoespacial (Mundo Real)
+### Módulo 2: Construtor de Topologia Geoespacial 
 1. Na barra lateral, selecione **"Construtor Interativo"**.
 2. Um mapa mundial real e interativo (Folium/OpenStreetMap) será carregado.
 3. **Mapeamento GPS:** Navegue no mapa até sua universidade, clique para marcar a posição exata de um prédio e digite o nome dele. O sistema captura a Latitude e Longitude (GPS).
