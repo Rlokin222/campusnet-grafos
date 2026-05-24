@@ -15,11 +15,11 @@ O peso de cada aresta não é informado diretamente — ele é calculado interna
 Custo Financeiro (R$) = (distância × fator_terreno) + (obstáculos × 50) + (diferença_andares × 100)
 ```
 
-O valor que você vê na Árvore Geradora Mínima não é inventado; ele segue nossa equação de engenharia de redes:
-- **Distância Física (m):** Medida real entre coordenadas de Latitude e Longitude usando fórmula geodésica. Equivale ao preço base do cabo (fibra/metálico) por metro percorrido.
-- **Fator de Terreno:** Solo macio (1.0), asfalto (1.5) ou rocha (2.0) afetam o custo de perfuração e aluguel de máquinas.
-- **Obstáculos:** Paredes de concreto estrutural, vias públicas. Exigem taxas, laudos ou quebras complexas. Custo base adicionado: R$ 50,00 por barreira.
-- **Andares:** Cabeamento vertical (shafts) exige trabalho em altura e guinchos. Custo adicionado: R$ 100,00 por andar de desnível.
+O valor que você vê na Árvore Geradora Mínima não é inventado; ele segue nossa equação de engenharia de redes, e **você pode editar os valores base (R$) na barra lateral do sistema**:
+- **Distância Física (m):** Medida real entre coordenadas de Latitude e Longitude usando fórmula geodésica. Multiplicada pelo "Cabo por Metro (R$/m)".
+- **Fator de Terreno:** Solo macio (1.0), asfalto (1.5) ou rocha (2.0) afetam o custo de perfuração (multiplicador).
+- **Obstáculos:** Paredes de concreto estrutural, vias públicas. Exigem taxas, laudos ou quebras complexas. Multiplicado pela "Taxa por Obstáculo (R$)".
+- **Andares:** Cabeamento vertical (shafts) exige trabalho em altura e guinchos. Multiplicado pela "Taxa por Andar (R$)".
 
 | Parâmetro | Descrição |
 |---|---|

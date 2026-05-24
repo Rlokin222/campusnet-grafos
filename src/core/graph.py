@@ -12,20 +12,25 @@ class Graph:
 
     Aqui a gente guarda os prédios do campus como vértices e as possíveis
     conexões de cabo como arestas. O custo de cada aresta é calculado
-    automaticamente pela fórmula do projeto:
+    automaticamente pela fórmula dinâmica do projeto:
 
-        Custo = (distancia × fator_terreno) + (obstaculos × 50) + (andares × 100)
+        Custo = (distancia × custo_cabo_m × fator_terreno) + (obstaculos × custo_obstaculo) + (andares × custo_andar)
     """
 
-    def __init__(self) -> None:
+    def __init__(self, custo_cabo_m: float = 1.0, custo_obstaculo: float = 50.0, custo_andar: float = 100.0) -> None:
         # Conjunto com os nomes de todos os prédios (vértices)
         self._vertices: set[str] = set()
         # Lista de adjacência: para cada prédio, quais outros ele alcança
         self._adj: dict[str, list[Edge]] = defaultdict(list)
         # Lista com todas as arestas (sem duplicatas — só uma direção cada)
         self._edges: list[Edge] = []
-        # Coordenadas opcionais para plotagem sobre mapas (x, y)
+        # Coordenadas opcionais para plotagem sobre mapas (x, y) ou (lat, lon)
         self._coords: dict[str, tuple[float, float]] = {}
+        
+        # Parâmetros de custo base (fornecidos pelo usuário)
+        self.custo_cabo_m = custo_cabo_m
+        self.custo_obstaculo = custo_obstaculo
+        self.custo_andar = custo_andar
 
     @property
     def vertices(self) -> list[str]:
@@ -69,10 +74,10 @@ class Graph:
         Calcula o custo da ligação e adiciona a aresta no grafo.
 
         A fórmula considera distância, dificuldade do terreno, obstáculos
-        físicos (paredes, dutos) e diferença de andares entre os prédios.
+        físicos e diferença de andares, multiplicados pelos custos base do usuário.
         """
         # Fórmula de custo definida no projeto
-        peso = (distancia * fator_terreno) + (obstaculos * 50) + (andares * 100)
+        peso = (distancia * self.custo_cabo_m * fator_terreno) + (obstaculos * self.custo_obstaculo) + (andares * self.custo_andar)
         edge = Edge(peso=round(peso, 4), origem=origem, destino=destino)
 
         # Registra os dois prédios como vértices (caso ainda não existam)
@@ -126,9 +131,14 @@ class Graph:
         Monta o grafo a partir do dicionário lido do arquivo JSON.
 
         O dicionário precisa ter as chaves 'vertices' e 'arestas',
-        que é o formato que o file_reader já entrega validado.
+        e opcionalmente 'parametros_custo'.
         """
-        graph = cls()
+        params = data.get("parametros_custo", {})
+        graph = cls(
+            custo_cabo_m=float(params.get("cabo_m", 1.0)),
+            custo_obstaculo=float(params.get("obstaculo", 50.0)),
+            custo_andar=float(params.get("andar", 100.0))
+        )
 
         vertices_data = data.get("vertices", [])
         if isinstance(vertices_data, dict):

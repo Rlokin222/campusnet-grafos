@@ -55,6 +55,13 @@ with st.sidebar:
     st.markdown("### CampusNet Solutions")
     modo = st.radio("Módulo de Operação", ["Painel Analítico", "Construtor Interativo"])
     st.write("---")
+    
+    st.markdown("### 💰 Tabela de Custos Reais")
+    st.caption("Edite os valores para simular os custos de mercado:")
+    custo_cabo = st.number_input("Cabo por Metro (R$/m)", min_value=0.1, value=2.50, step=0.50)
+    custo_obs = st.number_input("Taxa por Obstáculo (R$)", min_value=0.0, value=50.0, step=10.0)
+    custo_andar = st.number_input("Taxa por Andar (R$)", min_value=0.0, value=100.0, step=10.0)
+    st.write("---")
 
 # ===========================================================================
 # MODO 1: PAINEL ANALÍTICO
@@ -91,7 +98,12 @@ if modo == "Painel Analítico":
 
     with st.spinner("Processando topologia de rede..."):
         try:
-            result = process_campus_network(raw_bytes)
+            result = process_campus_network(
+                raw_bytes=raw_bytes,
+                custo_cabo_m=custo_cabo,
+                custo_obstaculo=custo_obs,
+                custo_andar=custo_andar
+            )
         except Exception as exc:
             st.error(f"Falha na validação do arquivo: {exc}")
             st.stop()
@@ -289,6 +301,11 @@ elif modo == "Construtor Interativo":
                 })
             
             final_dict = {
+                "parametros_custo": {
+                    "cabo_m": custo_cabo,
+                    "obstaculo": custo_obs,
+                    "andar": custo_andar
+                },
                 "vertices": st.session_state.builder_nodes,
                 "arestas": arestas_json
             }

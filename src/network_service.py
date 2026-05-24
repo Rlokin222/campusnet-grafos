@@ -30,7 +30,12 @@ class ProcessingResult:
         return self.build_time_ms + self.kruskal_time_ms
 
 
-def process_campus_network(raw_bytes: bytes) -> ProcessingResult:
+def process_campus_network(
+    raw_bytes: bytes,
+    custo_cabo_m: float | None = None,
+    custo_obstaculo: float | None = None,
+    custo_andar: float | None = None,
+) -> ProcessingResult:
     """
     Função principal que a interface chama quando o usuário faz o upload.
 
@@ -43,7 +48,16 @@ def process_campus_network(raw_bytes: bytes) -> ProcessingResult:
     # Etapa 1: lê o arquivo e constrói o grafo (medindo o tempo)
     t0 = time.perf_counter()
     data = load_json_from_bytes(raw_bytes)
+    
+    # Injeta os custos recebidos da UI no dicionário antes de construir o grafo
+    if "parametros_custo" not in data:
+        data["parametros_custo"] = {}
+    if custo_cabo_m is not None: data["parametros_custo"]["cabo_m"] = custo_cabo_m
+    if custo_obstaculo is not None: data["parametros_custo"]["obstaculo"] = custo_obstaculo
+    if custo_andar is not None: data["parametros_custo"]["andar"] = custo_andar
+        
     graph = Graph.from_dict(data)
+    
     build_time_ms = (time.perf_counter() - t0) * 1000
 
     # Etapa 2: verifica se todos os prédios estão conectados
