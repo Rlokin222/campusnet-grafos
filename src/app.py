@@ -2,8 +2,8 @@ import json
 import pandas as pd
 import streamlit as st
 import folium
-from folium.plugins import Geocoder
 from geopy.distance import geodesic
+from geopy.geocoders import Nominatim
 
 try:
     from streamlit_folium import st_folium
@@ -29,6 +29,10 @@ if "builder_edges" not in st.session_state:
     ])
 if "generated_json" not in st.session_state:
     st.session_state.generated_json = None
+if "map_center" not in st.session_state:
+    st.session_state.map_center = [-23.5505, -46.6333]
+if "ignored_click" not in st.session_state:
+    st.session_state.ignored_click = None
 
 # CSS Corporativo
 st.markdown(
@@ -179,9 +183,25 @@ elif modo == "Construtor Interativo":
     col1, col2 = st.columns([2, 1])
     
     with col1:
-        st.markdown("**1. Clique no mapa para capturar a Latitude e Longitude:**")
-        # Centro inicial do mapa
-        m = folium.Map(location=[-23.5505, -46.6333], zoom_start=14, tiles=None)
+        st.markdown("**1. Busque um local ou clique no mapa:**")
+        
+        # Sistema de Busca Nativo do Streamlit (Muito mais robusto que o plugin do folium)
+        col_search, col_btn = st.columns([3, 1])
+        with col_search:
+            search_query = st.text_input("Buscar endereço, bairro ou universidade:", placeholder="Ex: USP São Paulo, UFRJ, etc...", label_visibility="collapsed")
+        with col_btn:
+            if st.button("🔍 Buscar"):
+                if search_query:
+                    geolocator = Nominatim(user_agent="campusnet_app")
+                    loc = geolocator.geocode(search_query)
+                    if loc:
+                        st.session_state.map_center = [loc.latitude, loc.longitude]
+                        st.success(f"Encontrado: {loc.address}")
+                    else:
+                        st.warning("Local não encontrado.")
+                        
+        # Centro do mapa dinâmico baseado na busca
+        m = folium.Map(location=st.session_state.map_center, zoom_start=15, tiles=None)
         
         # Adiciona as opções de Camadas (Ruas e Satélite)
         folium.TileLayer('OpenStreetMap', name='Ruas (Padrão)').add_to(m)
@@ -194,10 +214,7 @@ elif modo == "Construtor Interativo":
         ).add_to(m)
         
         # Adiciona o controle para o usuário alternar entre Satélite e Ruas
-        folium.LayerControl().add_to(m)
-        
-        # Adiciona a barra de pesquisa (Lupa) sem forçar posição para evitar bugs no Streamlit
-        Geocoder().add_to(m)
+        folium.LayerControl(position="topright").add_to(m)
         
         # Adiciona marcadores para pontos já cadastrados
         for name, coords in st.session_state.builder_nodes.items():
@@ -217,15 +234,28 @@ elif modo == "Construtor Interativo":
         if map_data and map_data.get("last_clicked"):
             lat = map_data["last_clicked"]["lat"]
             lon = map_data["last_clicked"]["lng"]
-            st.write(f"📍 Coordenada GPS capturada:\n**Lat: {lat:.6f}\nLon: {lon:.6f}**")
             
-            node_name = st.text_input("Nome do Prédio/Local:")
-            if st.button("Salvar Ponto no Mapa", type="primary"):
-                if node_name:
-                    st.session_state.builder_nodes[node_name] = {"lat": lat, "lon": lon}
-                    st.rerun()
-                else:
-                    st.warning("Dê um nome ao ponto.")
+            # Só mostra o prompt se o usuário não clicou em "Cancelar" para esta exata coordenada
+            if st.session_state.ignored_click != (lat, lon):
+                st.write(f"📍 Coordenada GPS capturada:\n**Lat: {lat:.6f}\nLon: {lon:.6f}**")
+                
+                node_name = st.text_input("Nome do Prédio/Local:")
+                
+                col_s, col_c = st.columns(2)
+                with col_s:
+                    if st.button("Salvar Ponto", type="primary"):
+                        if node_name:
+                            st.session_state.builder_nodes[node_name] = {"lat": lat, "lon": lon}
+                            st.rerun()
+                        else:
+                            st.warning("Dê um nome ao ponto.")
+                with col_c:
+                    if st.button("Cancelar", type="secondary"):
+                        # Ignora este clique específico para limpar o painel
+                        st.session_state.ignored_click = (lat, lon)
+                        st.rerun()
+            else:
+                st.info("Clique em qualquer lugar do mapa para obter as coordenadas.")
         else:
             st.info("Clique em qualquer lugar do mapa para obter as coordenadas.")
 
